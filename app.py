@@ -388,7 +388,6 @@ else:
             if not json_files:
                 st.info("보관된 리포트가 없습니다.")
             else:
-            else:
                 # [Fix] Archive Gallery Grid System (Row-based)
                 def chunked(iterable, n):
                     return [iterable[i:i + n] for i in range(0, len(iterable), n)]
