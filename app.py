@@ -313,10 +313,9 @@ else:
             current_file = st.session_state.get('selected_file_name', 'unknown')
             like_count = analytics.get('likes', {}).get(current_file, 0)
             
-            # 하단 중앙 정렬
-            c_left, c_center, c_right = st.columns([1, 2, 1])
-            with c_center:
-                if st.button(f"❤️ 이 리포트가 맘에 드셨다면? (좋아요 {like_count})", use_container_width=True):
+            st.divider()
+            
+            # [수정] 좋아요 버튼을 하단으로 이동
             current_file = st.session_state.get('selected_file_name', 'unknown')
             like_count = analytics.get('likes', {}).get(current_file, 0)
             
