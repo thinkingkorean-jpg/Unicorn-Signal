@@ -20,8 +20,13 @@ st.markdown("""
     /* 전체 배경 */
     .reportview-container { background: #f9fafb; }
     
-    /* 사이드바 배경 흰색으로 고정 (로고 위화감 제거) */
-    [data-testid="stSidebar"] { background-color: #ffffff; }
+    /* [Dark Mode Spec] 사이드바: 로고 배경(흰색)과 맞추기 위해 강제 흰색 유지 + 글씨 검정 */
+    [data-testid="stSidebar"] { 
+        background-color: #ffffff; 
+    }
+    [data-testid="stSidebar"] * {
+        color: #000000 !important;
+    }
     
     /* 헤더 폰트 */
     h1 { font-family: 'Merriweather', serif; color: #1f2937; }
@@ -48,6 +53,23 @@ st.markdown("""
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         text-align: center;
         border: 1px solid #f3f4f6;
+        color: #1f2937; /* 다크모드에서도 글씨 잘 보이게 */
+    }
+
+    /* [Mobile/DarkMode Fix] 뉴스레터 본문용 '종이' 스타일 컨테이너 */
+    .newsletter-paper {
+        background-color: #ffffff;
+        color: #000000;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+    }
+    /* 모바일에서는 패딩 줄임 */
+    @media (max-width: 640px) {
+        .newsletter-paper {
+            padding: 15px;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -263,8 +285,15 @@ else:
         if html_files:
             with open(html_files[0], 'r', encoding='utf-8') as f:
                 content = f.read()
-                # iframe 대신 직접 렌더링하여 자연스러운 스크롤 유도
-                st.markdown(content, unsafe_allow_html=True)
+                # [Fix] st.markdown 사용 시 들여쓰기로 인해 코드로 인식되는 문제 해결
+                # 1. 주석 제거
+                import re
+                content = re.sub(r'<!--.*?-->', '', content, flags=re.DOTALL)
+                # 2. 각 라인의 앞쪽 공백 제거 (Markdown Code Block 방지)
+                content = "\n".join([line.lstrip() for line in content.split('\n')])
+                
+                # [다크모드 대응] 흰색 종이 스타일(newsletter-paper) 적용
+                st.markdown(f'<div class="newsletter-paper">{content}</div>', unsafe_allow_html=True)
         else:
             st.info("👋 현재 발행된 뉴스레터가 없습니다. 스케줄러가 곧 첫 리포트를 배달합니다!")
 
@@ -278,8 +307,13 @@ else:
                 del st.session_state['selected_html']
                 st.rerun()
             
-            # 뉴스레터 본문 (통합 스크롤)
-            st.markdown(st.session_state['selected_html'], unsafe_allow_html=True)
+            # 뉴스레터 본문 (통합 스크롤 + 다크모드 대응 + 코드노출 방지)
+            import re
+            clean_html = st.session_state['selected_html']
+            clean_html = re.sub(r'<!--.*?-->', '', clean_html, flags=re.DOTALL)
+            clean_html = "\n".join([line.lstrip() for line in clean_html.split('\n')])
+            
+            st.markdown(f'<div class="newsletter-paper">{clean_html}</div>', unsafe_allow_html=True)
             
             st.divider()
             
