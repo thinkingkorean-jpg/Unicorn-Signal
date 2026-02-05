@@ -391,23 +391,32 @@ else:
                 # [Fix] 정렬 (파일명 역순 = 날짜 최신순)
                 json_files = sorted(json_files, reverse=True)
 
-                # [Fix] 카드 높이 통일을 위한 CSS 주입
+                # [Fix] 카드 높이 통일 & 스타일 정의
                 st.markdown("""
                 <style>
-                div[data-testid="stImage"] img {
-                    height: 200px !important;
-                    object-fit: cover !important;
-                }
-                div[data-testid="column"] {
-                    display: flex;
-                    flex-direction: column; 
-                }
-                div[data-testid="stVerticalBlockBorderWrapper"] > div {
+                .archive-card-container {
                     height: 100%;
-                    min-height: 450px; /* 카드 최소 높이 강제설정 */
+                    min-height: 460px;
                     display: flex;
                     flex-direction: column;
                     justify-content: space-between;
+                }
+                .archive-thumb {
+                    width: 100%;
+                    height: 200px;
+                    object-fit: cover;
+                    border-radius: 8px;
+                    margin-bottom: 10px;
+                }
+                .archive-title {
+                    font-size: 1.1rem;
+                    font-weight: bold;
+                    margin-bottom: 5px;
+                    line-height: 1.4;
+                    min-height: 3.0em; /* 제목 두 줄 확보 */
+                }
+                div[data-testid="stVerticalBlockBorderWrapper"] > div {
+                    height: 100%;
                 }
                 </style>
                 """, unsafe_allow_html=True)
@@ -434,35 +443,33 @@ else:
                         title = title.strip()
                         if title.startswith(":"): title = title[1:].strip()
                         
+                        # [Fix] 썸네일 처리 (HTML <img> 태그 사용 - onerror 핸들링)
+                        thumb = meta.get('thumbnail')
+                        if not thumb or not thumb.startswith("http"):
+                           thumb = "https://placehold.co/600x400/5b21b6/ffffff?text=Unicorn+Signal"
                         
+                        cols[i].markdown(f"""
+                        <div class="archive-card-container">
+                            <div>
+                                <img src="{thumb}" class="archive-thumb" 
+                                     onerror="this.onerror=null; this.src='https://placehold.co/600x400/5b21b6/ffffff?text=Unicorn+Signal';">
+                                <div class="archive-title">{title}</div>
+                                <div style="color: #666; font-size: 0.85rem; margin-bottom: 10px;">{meta.get('date', '')}</div>
+                                <div style="font-size: 0.9rem; color: #444; margin-bottom: 15px;">
+                                    {meta.get('summary', '')[:50]}...
+                                </div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        # 버튼은 Streamlit 네이티브 위젯 사용 (이벤트 처리 위해)
                         with cols[i]:
-                            with st.container(border=True):
-                                # 썸네일 검증 (엄격하게)
-                                thumb = meta.get('thumbnail')
-                                is_valid_thumb = thumb and isinstance(thumb, str) and thumb.startswith("http") and len(thumb) > 10
-                                
-                                if not is_valid_thumb:
-                                    thumb = "https://placehold.co/600x400/5b21b6/ffffff?text=Unicorn+Signal"
-                                
-                                try:
-                                    st.image(thumb, use_container_width=True)
-                                except:
-                                    st.image("https://placehold.co/600x400/9ca3af/ffffff?text=No+Image", use_container_width=True)
-                                
-                                st.markdown(f"**{title}**")
-                                st.caption(meta.get('date', ''))
-                                
-                                # 요약문
-                                summary = meta.get('summary', '')
-                                if len(summary) > 40: summary = summary[:40] + "..."
-                                st.write(summary)
-                                
-                                unique_key = f"read_{os.path.basename(jpath)}"
-                                if st.button("읽기 ➡️", key=unique_key):
-                                    target_html = jpath.replace('.json', '.html')
-                                    if os.path.exists(target_html):
-                                        with open(target_html, 'r', encoding='utf-8') as hf:
-                                            content = hf.read()
-                                        st.session_state['selected_html'] = content
-                                        st.session_state['selected_file_name'] = os.path.basename(target_html)
-                                        st.rerun()
+                             unique_key = f"read_{os.path.basename(jpath)}"
+                             if st.button("읽기 ➡️", key=unique_key):
+                                target_html = jpath.replace('.json', '.html')
+                                if os.path.exists(target_html):
+                                    with open(target_html, 'r', encoding='utf-8') as hf:
+                                        content = hf.read()
+                                    st.session_state['selected_html'] = content
+                                    st.session_state['selected_file_name'] = os.path.basename(target_html)
+                                    st.rerun()
