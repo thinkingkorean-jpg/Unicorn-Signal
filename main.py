@@ -80,10 +80,10 @@ async def main(keyword=None):
     env = Environment(loader=FileSystemLoader('templates'))
     template = env.get_template('newsletter_theme.html')
     
-    # [Monetization] 키워드 기반 추천 상품 선정
-    from products import get_recommended_product
-    recommended_product = get_recommended_product(expanded_keywords)
-    print(f"[ADS] Selected Product: {recommended_product['title']}")
+    # [Monetization] 키워드 기반 추천 상품 선정 (잠시 비활성화)
+    # from products import get_recommended_product
+    # recommended_product = get_recommended_product(expanded_keywords)
+    # print(f"[ADS] Selected Product: {recommended_product['title']}")
     
     today_str = datetime.now().strftime('%Y-%m-%d')
     output_html = template.render(
@@ -91,7 +91,7 @@ async def main(keyword=None):
         date=today_str,
         body_content=newsletter_body,
         keywords=", ".join(expanded_keywords),
-        product=recommended_product # 템플릿에 전달
+        # product=recommended_product # 광고 비활성화 요청
     )
     
     # 7. 파일 저장 (Archiving)
