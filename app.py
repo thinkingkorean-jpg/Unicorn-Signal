@@ -100,6 +100,30 @@ html_files = glob.glob('archives/*.html')
 html_files.sort(key=os.path.getmtime, reverse=True) # 최신순 정렬
 
 with tab1:
+    # 1. Hero Section (상단 배너)
+    st.markdown("""
+    <div style="text-align: center; padding: 20px 0 40px 0;">
+        <h1>🦄 Unicorn Signal</h1>
+        <p style="font-size: 1.2rem; color: #555;">
+            "바쁜 1인 기업가를 위한, <b>AI가 떠먹여주는 테크 트렌드</b>"
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 2. 대시보드 (KPI)
+    col1, col2, col3 = st.columns(3)
+    
+    # 최신 주제 가져오기
+    latest_topic = "준비 중..."
+    if html_files:
+        latest_topic = os.path.basename(html_files[0]).split('_')[1].replace('.html', '').replace('_', ' ')
+
+    col1.metric("🚀 오늘의 트렌드", latest_topic)
+    col2.metric("📚 누적 리포트", f"{len(html_files)}건")
+    col3.metric("⚡ AI 가동 상태", "Active Online")
+    
+    st.divider()
+
     if html_files:
         latest_file = html_files[0]
         with open(latest_file, 'r', encoding='utf-8') as f:
@@ -114,7 +138,18 @@ with tab1:
             mime="text/html"
         )
     else:
-        st.warning("아직 발행된 뉴스레터가 없습니다. 스케줄러를 실행하거나 main.py를 실행해보세요!")
+        st.info("👋 아직 발행된 뉴스레터가 없습니다. 스케줄러가 곧 첫 번째 리포트를 배달할 예정입니다!")
+        
+        # 시스템 소개 (빈 화면 채우기용)
+        st.markdown("### 🤖 Unicorn Signal은 어떻게 작동하나요?")
+        st.markdown("""
+        1. **Trend Hunting**: 매일 아침 전 세계 테크 뉴스(TechCrunch, HackerNews)와 유튜브를 뒤집니다.
+        2. **AI Analysis**: 구글 Gemini가 내용을 읽고 "돈이 되는 정보"만 골라냅니다.
+        3. **Auto-Publishing**: 보기 편한 HTML 리포트로 만들어서 이메일과 이곳에 게시합니다.
+        """)
+        
+        if st.button("🚀 지금 즉시 리포트 생성하기 (Admin Only)"):
+            st.warning("서버 콘솔에서 `python main.py`를 실행해주세요!")
 
 import json
 
