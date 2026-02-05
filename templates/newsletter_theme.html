@@ -24,22 +24,49 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f9fafb;
-            /* Very light gray bg for contrast with card */
             color: var(--text-main);
             line-height: 1.8;
             margin: 0;
             padding: 0;
             word-break: keep-all;
-            /* 전체적으로 단어 단위 줄바꿈 적용 */
+        }
+
+        /* [Mobile Fix] Responsive Adjustments */
+        @media only screen and (max-width: 600px) {
+            .container {
+                margin: 0 !important;
+                border-radius: 0 !important;
+            }
+
+            .header {
+                padding: 40px 15px 30px !important;
+            }
+
+            .header h1 {
+                font-size: 2rem !important;
+            }
+
+            .summary-box {
+                margin: 30px 20px 0 20px !important;
+                padding: 15px !important;
+            }
+
+            img {
+                height: auto !important;
+                max-width: 100% !important;
+            }
         }
 
         .container {
+            width: 100%;
+            /* [Mobile Fix] Fluid width */
             max-width: 760px;
-            margin: 40px auto;
+            /* PC Max Width */
+            margin: 20px auto;
+            /* Reduced margin */
             background: #ffffff;
             padding: 0;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03);
-            /* Subtle elegance */
             border-radius: 8px;
             overflow: hidden;
         }
