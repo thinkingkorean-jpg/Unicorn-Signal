@@ -148,8 +148,9 @@ async def main(keyword=None):
         print(f"[WARN] Summary extraction failed: {e}")
         summary_text = f"{base_keywords} 트렌드 분석 Report"
 
+    # [Fix] 메타데이터: 제목 중복 제거된 safe_title 사용, 썸네일 확실히 지정
     metadata = {
-        "title": f"🦄 {ai_title}",
+        "title": safe_title, # 이미 정제된 제목 사용 (유니콘 시그널 제거됨)
         "date": today_str,
         "keyword": base_keywords,
         "summary": summary_text,

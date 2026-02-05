@@ -177,6 +177,15 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             margin: 30px 0;
             display: block;
+            background-color: #f3f4f6;
+            /* 빈 이미지 로딩 중 회색 배경 */
+            min-height: 50px;
+        }
+
+        /* Broken Image Hiding */
+        img:not([src]),
+        img[src=""] {
+            display: none;
         }
 
         /* Links */
@@ -271,6 +280,17 @@
                     <p>We hunt trends, you hunt unicorns. 🦄</p>
                 </div>
             </div>
+            <script>
+                // [Fix] 로드 실패한 이미지 자동 숨김 (박스 깨짐 방지)
+                document.addEventListener("DOMContentLoaded", function () {
+                    var images = document.querySelectorAll('img');
+                    images.forEach(function (img) {
+                        img.onerror = function () {
+                            this.style.display = 'none';
+                        };
+                    });
+                });
+            </script>
 </body>
 
 </html>
