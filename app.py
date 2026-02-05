@@ -237,6 +237,7 @@ else:
     json_files = sorted(glob.glob('archives/*.json'), key=os.path.getmtime, reverse=True)
 
     # 1) 홈 탭
+    # 1) 홈 탭
     with tab_home:
         # KPI 배지 & 최신 토픽 파싱 개선
         latest_title = "No Data"
@@ -258,12 +259,12 @@ else:
         </div>
         """, unsafe_allow_html=True)
         
-        # 최신 뉴스레터 표시 (높이 증가로 스크롤 통일감 유도)
+        # 최신 뉴스레터 표시 (높이 증가로 스크롤 통일감 유도 -> 스크롤 활성화)
         if html_files:
             with open(html_files[0], 'r', encoding='utf-8') as f:
-                # height를 충분히 주어 이중 스크롤 방지 시도
-                st.components.v1.html(f.read(), height=1200, scrolling=False)
-                st.caption("※ 내용이 잘렸다면 아카이브에서 '읽기'를 눌러 전체화면으로 보세요.")
+                # height를 유지하되 scrolling=True로 변경하여 내용 잘림 방지
+                st.components.v1.html(f.read(), height=1000, scrolling=True)
+                st.caption("※ 화면이 작아 안 보이면 스크롤을 내려주세요.")
         else:
             st.info("👋 현재 발행된 뉴스레터가 없습니다. 스케줄러가 곧 첫 리포트를 배달합니다!")
 
@@ -272,24 +273,30 @@ else:
         if 'selected_html' in st.session_state and st.session_state['selected_html']:
             # >>> 상세 보기 화면 <<<
             
-            c_back, c_like = st.columns([1, 4])
-            with c_back:
-                if st.button("⬅️ 목록으로"):
-                    del st.session_state['selected_html']
-                    st.rerun()
-            with c_like:
-                current_file = st.session_state.get('selected_file_name', 'unknown')
-                like_count = analytics.get('likes', {}).get(current_file, 0)
-                if st.button(f"❤️ 좋아요 ({like_count})"):
+            # [수정] 상단 컨트롤 바 (심플하게 뒤로가기만)
+            if st.button("⬅️ 목록으로"):
+                del st.session_state['selected_html']
+                st.rerun()
+            
+            # 뉴스레터 본문
+            st.components.v1.html(st.session_state['selected_html'], height=1000, scrolling=True)
+            
+            st.divider()
+            
+            # [수정] 좋아요 버튼을 하단으로 이동
+            current_file = st.session_state.get('selected_file_name', 'unknown')
+            like_count = analytics.get('likes', {}).get(current_file, 0)
+            
+            # 하단 중앙 정렬 느낌을 위한 컬럼 분할
+            c_left, c_center, c_right = st.columns([1, 2, 1])
+            with c_center:
+                if st.button(f"❤️ 이 리포트가 맘에 드셨다면? (좋아요 {like_count})", use_container_width=True):
                     success, msg = toggle_like(current_file)
                     if success:
                         st.balloons()
                         st.success(msg)
                     else:
                         st.info(msg)
-            
-            # 뉴스레터 본문
-            st.components.v1.html(st.session_state['selected_html'], height=1200, scrolling=True)
             
         else:
             # >>> 목록 화면 <<<
