@@ -98,7 +98,9 @@ async def main(keyword=None):
     # 8. 이메일 전송 (NEW)
     print("[EMAIL] Sending Newsletter...")
     email_subject = f"🦄 {ai_title} ({today_str})"
-    send_email(email_subject, output_html, to_email="jh.lee267@cj.net")
+    # 이메일 수신자 설정 (환경 변수 또는 기본값)
+    to_email = os.getenv("TO_EMAIL", "recipient@example.com")
+    send_email(email_subject, output_html, to_email=to_email)
 
 if __name__ == "__main__":
     asyncio.run(main())
