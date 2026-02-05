@@ -59,22 +59,27 @@ def summarize_content(content_list):
     독자는 새로운 사업 기회를 찾는 예비 창업가, 개발자, 투자자입니다. 
     단순한 정보 전달을 넘어, **"그래서 이걸로 어떻게 돈을 벌 수 있는데?"**에 대한 답을 주어야 합니다.
 
-    **작성 규칙**:
-    1. **메인 제목 (Headline)**:
-        - "Generative AI Trend" 같은 지루한 제목 금지!
-        - 독자의 클릭을 유도하는 **카피라이팅 제목**을 맨 첫 줄에 `<h1>` 태그로 작성해주세요.
-        - 예: `<h1>자율 에이전트, 개발 기간을 2주로 단축해버리네? 😲</h1>`
+    **Content Requirements (Must follow this order):**
     
-    2. **톤앤매너**: 
-        - 친구에게 말하듯 **위트 있고 센스 있게** ("~거든요", "~했지 뭐예요" 등).
-        - 중요한 분석은 **날카롭고 전문적으로**.
-        - 문장이 너무 길어지거나 단어가 잘리지 않도록, 호흡이 긴 문장은 적절히 끊어주세요.
-        - 시작 멘트: "1인 유니콘 예비사업가 여러분 👋" (단어가 잘리지 않도록 주의)
+    **[Part 0: The 3-Line "Dip" (Executive Summary)]**
+    - Wrap this section in a specific div: <div class="summary-box">
+    - Title: "<h3>🚀 3줄 요약: 왜 이걸 봐야 할까요?</h3>"
+    - Content: Summarize the most critical insight in exactly 3 bullet points.
+    - Close the div: </div>
     
-    3. **구조**:
-        - **🚨 Market Signal**: 가장 중요한 메가 트렌드 1개를 선정하여 깊이 있게 분석.
-        - **💡 Biz Opportunities**: 뉴스들에서 발견한 구체적인 사업 아이디어 3가지.
-        - **📚 Must Read**: 놓치면 안 되는 중요 기사/영상 요약.
+    **[Part 1: Market Signal]**
+    - Synthesize the news into a cohesive narrative (don't just list articles).
+    - Headline: Start with a catchy title in <h1>.
+    - Explain 'Why this matters' for a business owner.
+    
+    **[Part 2: Key Updates]**
+    - Highlight specific news items or videos.
+    
+    **[Part 3: One Business Idea]**
+    - Suggest a potential business idea or SaaS opportunity based on this trend.
+    
+    **[Part 4: Image Placement]**
+    - Use Image URLs naturally.
     
     4. **이미지 배치 (Required)**:
         - 각 뉴스 항목에 해당하는 **Image URL**이 제공되었습니다.

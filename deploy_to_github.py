@@ -80,7 +80,7 @@ def main():
     print("\n[IMPORTANT] A browser window or login box might pop up.")
     print("Please sign in with your GitHub account if prompted.\n")
     
-    push_result = run_command("git push -u origin main")
+    push_result = run_command("git push -u origin main --force")
     
     if push_result is not None:
         print("\n---------------------------------------------------")
