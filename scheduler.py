@@ -43,9 +43,9 @@ def job():
         print(f"[ERROR] Job failed: {e}")
 
 if __name__ == "__main__":
-    # 매일 오전 8시에 실행
+    # 매일 스케줄러 실행 안내 메시지
     print("[SCHEDULER] Daily Newsletter Generator Started.")
-    print("[SCHEDULER] Will run every day at 08:00 AM.")
+    print("[SCHEDULER] Will run every day at 07:00 AM and 15:00 PM.")
     print("[SCHEDULER] Press Ctrl+C to stop.")
     
     # 매일 아침 7시, 오후 3시에 실행
