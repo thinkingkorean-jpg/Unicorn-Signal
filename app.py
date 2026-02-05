@@ -284,19 +284,34 @@ else:
         # 최신 뉴스레터 표시 (iframe 제거 -> st.markdown으로 통합 스크롤 구현)
         if html_files:
             with open(html_files[0], 'r', encoding='utf-8') as f:
-                content = f.read()
+                raw_html = f.read()
                 
-                # [Fix] 기존 파일들의 코드 노출(Code Block) 및 주석 제거를 위한 안전한 Cleaning
-                # 1. 특정 주석만 타겟팅하여 제거 (CSS 등 다른 주석 건드리지 않음)
-                for comment in ['<!-- Main Content -->', '<!-- Subscription Section -->', '<!-- Footer -->']:
-                    content = content.replace(comment, '')
+                # [Fix] HTML 구조 파싱 후 스타일과 본문만 추출하여 렌더링 (CSS 깨짐 완벽 방지)
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(raw_html, 'html.parser')
                 
-                # 2. 모든 라인의 앞쪽 공백 제거 (Markdown Code Block 인식 방지)
-                import re
-                content = re.sub(r'^[ \t]+', '', content, flags=re.MULTILINE)
+                # 1. 스타일 추출
+                style_content = ""
+                if soup.style:
+                    style_content = soup.style.string
                 
-                # [다크모드 대응] 흰색 종이 스타일(newsletter-paper) 적용
-                st.markdown(f'<div class="newsletter-paper">{content}</div>', unsafe_allow_html=True)
+                # 2. 본문(Container) 추출
+                body_content = soup.find('div', class_='container')
+                if not body_content:
+                    body_content = soup.body
+                
+                if body_content:
+                    # newsletter-paper 클래스를 적용하여 스타일 통일
+                    final_html = f"""
+                    <style>{style_content}</style>
+                    <div class="newsletter-paper">
+                        {body_content.decode_contents()}
+                    </div>
+                    """
+                    st.markdown(final_html, unsafe_allow_html=True)
+                else:
+                    st.error("뉴스레터 형식이 올바르지 않습니다.")
+
         else:
             st.info("👋 현재 발행된 뉴스레터가 없습니다. 스케줄러가 곧 첫 리포트를 배달합니다!")
 
@@ -311,19 +326,25 @@ else:
                 st.rerun()
             
             # 뉴스레터 본문
-            # [Fix] 기존 파일들을 위한 안전한 Cleaning
             html_content = st.session_state['selected_html']
             
-            # 1. 특정 주석 제거
-            for comment in ['<!-- Main Content -->', '<!-- Subscription Section -->', '<!-- Footer -->']:
-                html_content = html_content.replace(comment, '')
+            # [Fix] HTML 파싱 및 렌더링
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(html_content, 'html.parser')
             
-            # 2. 공백 제거
-            import re
-            html_content = re.sub(r'^[ \t]+', '', html_content, flags=re.MULTILINE)
+            style_content = soup.style.string if soup.style else ""
+            body_content = soup.find('div', class_='container')
+            if not body_content: body_content = soup.body
             
-            st.markdown(f'<div class="newsletter-paper">{html_content}</div>', unsafe_allow_html=True)
-            
+            if body_content:
+                final_html = f"""
+                <style>{style_content}</style>
+                <div class="newsletter-paper">
+                    {body_content.decode_contents()}
+                </div>
+                """
+                st.markdown(final_html, unsafe_allow_html=True)
+
             st.divider()
             
             # [수정] 좋아요 버튼을 하단으로 이동
