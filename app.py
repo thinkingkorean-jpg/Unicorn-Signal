@@ -285,14 +285,9 @@ else:
         if html_files:
             with open(html_files[0], 'r', encoding='utf-8') as f:
                 content = f.read()
-                # [Fix] st.markdown 사용 시 들여쓰기로 인해 코드로 인식되는 문제 해결
-                # 1. 주석 제거
-                import re
-                content = re.sub(r'<!--.*?-->', '', content, flags=re.DOTALL)
-                # 2. 각 라인의 앞쪽 공백 제거 (Markdown Code Block 방지)
-                content = "\n".join([line.lstrip() for line in content.split('\n')])
-                
-                # [다크모드 대응] 흰색 종이 스타일(newsletter-paper) 적용
+                # [Fix] 과도한 Cleaning 로직 제거 (CSS 깨짐 방지)
+                # 원본 HTML에서 이미 주석을 제거했으므로, 바로 렌더링
+                # div로 감싸면 Markdown Code Block으로 인식되지 않음
                 st.markdown(f'<div class="newsletter-paper">{content}</div>', unsafe_allow_html=True)
         else:
             st.info("👋 현재 발행된 뉴스레터가 없습니다. 스케줄러가 곧 첫 리포트를 배달합니다!")
@@ -307,17 +302,21 @@ else:
                 del st.session_state['selected_html']
                 st.rerun()
             
-            # 뉴스레터 본문 (통합 스크롤 + 다크모드 대응 + 코드노출 방지)
-            import re
-            clean_html = st.session_state['selected_html']
-            clean_html = re.sub(r'<!--.*?-->', '', clean_html, flags=re.DOTALL)
-            clean_html = "\n".join([line.lstrip() for line in clean_html.split('\n')])
-            
-            st.markdown(f'<div class="newsletter-paper">{clean_html}</div>', unsafe_allow_html=True)
+            # 뉴스레터 본문
+            # [Fix] 과도한 Cleaning 로직 제거
+            html_content = st.session_state['selected_html']
+            st.markdown(f'<div class="newsletter-paper">{html_content}</div>', unsafe_allow_html=True)
             
             st.divider()
             
             # [수정] 좋아요 버튼을 하단으로 이동
+            current_file = st.session_state.get('selected_file_name', 'unknown')
+            like_count = analytics.get('likes', {}).get(current_file, 0)
+            
+            # 하단 중앙 정렬
+            c_left, c_center, c_right = st.columns([1, 2, 1])
+            with c_center:
+                if st.button(f"❤️ 이 리포트가 맘에 드셨다면? (좋아요 {like_count})", use_container_width=True):
             current_file = st.session_state.get('selected_file_name', 'unknown')
             like_count = analytics.get('likes', {}).get(current_file, 0)
             
