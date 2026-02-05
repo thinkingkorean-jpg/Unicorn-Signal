@@ -96,16 +96,49 @@ async def main(keyword=None):
     print(f"\n[DONE] Trend Report Saved: {html_filename}")
 
     # 7-1. 메타데이터 저장 (For Archive UI)
-    thumbnail_url = "https://emojigraph.org/media/apple/unicorn_1f984.png"
-    # news_items가 있으면 첫 번째 이미지를 썸네일로 사용
-    if 'news_items' in locals() and news_items and news_items[0].get('image'):
-       thumbnail_url = news_items[0]['image']
-       
+    thumbnail_url = None
+    
+    # 1. 뉴스 이미지 확인
+    if 'news_items' in locals() and news_items:
+        for item in news_items:
+            if item.get('image'):
+                thumbnail_url = item['image']
+                break
+    
+    # 2. 유튜브 썸네일 확인 (뉴스 이미지가 없으면)
+    if not thumbnail_url and 'video_items' in locals() and video_items:
+        for item in video_items:
+            if item.get('thumbnail'):
+                thumbnail_url = item['thumbnail']
+                break
+    
+    # 3. 그래도 없으면 깔끔한 텍스트 썸네일 (placeholder)
+    if not thumbnail_url:
+        safe_keyword = base_keywords.replace(' ', '+')
+        thumbnail_url = f"https://placehold.co/600x400/1e293b/FFF?text={safe_keyword}"
+
+    # 요약문 추출 (HTML의 summary-box에서 텍스트만 발췌)
+    try:
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(output_html, 'html.parser')
+        summary_div = soup.find("div", class_="summary-box")
+        if summary_div:
+            # "3줄 요약" 제목 제외하고 내용만 가져오기
+            summary_text = summary_div.get_text(separator=" ", strip=True)
+            # 너무 길면 자르기
+            if len(summary_text) > 100:
+                summary_text = summary_text[:100] + "..."
+        else:
+            summary_text = f"{base_keywords} 트렌드 분석 및 주요 뉴스 요약"
+    except Exception as e:
+        print(f"[WARN] Summary extraction failed: {e}")
+        summary_text = f"{base_keywords} 트렌드 분석 Report"
+
     metadata = {
         "title": f"🦄 {ai_title}",
         "date": today_str,
         "keyword": base_keywords,
-        "summary": f"{base_keywords} 트렌드 분석 및 주요 뉴스 요약",
+        "summary": summary_text,
         "thumbnail": thumbnail_url,
         "filename": os.path.basename(html_filename)
     }
