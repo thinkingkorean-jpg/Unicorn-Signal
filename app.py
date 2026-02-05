@@ -391,7 +391,7 @@ else:
                 # [Fix] 정렬 (파일명 역순 = 날짜 최신순)
                 json_files = sorted(json_files, reverse=True)
 
-                # [Fix] 카드 높이 통일 & 스타일 정의
+                # [Fix] 모던한 카드 디자인 & 이미지 폴백 CSS (Blue Theme)
                 st.markdown("""
                 <style>
                 .archive-card-container {
@@ -401,19 +401,49 @@ else:
                     flex-direction: column;
                     justify-content: space-between;
                 }
-                .archive-thumb {
+                .archive-thumb-wrapper {
+                    position: relative;
                     width: 100%;
                     height: 200px;
+                    border-radius: 12px;
+                    overflow: hidden;
+                    /* 세련된 딥 블루 그라데이션 (기본 배경) */
+                    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    margin-bottom: 12px;
+                }
+                .archive-thumb-placeholder-text {
+                    position: absolute;
+                    color: rgba(255,255,255,0.8);
+                    font-weight: 700;
+                    font-size: 1.2rem;
+                    letter-spacing: 1px;
+                    z-index: 1;
+                }
+                .archive-thumb {
+                    position: relative;
+                    width: 100%;
+                    height: 100%;
                     object-fit: cover;
-                    border-radius: 8px;
-                    margin-bottom: 10px;
+                    z-index: 2;
+                    transition: opacity 0.3s ease;
                 }
                 .archive-title {
-                    font-size: 1.1rem;
-                    font-weight: bold;
-                    margin-bottom: 5px;
+                    font-size: 1.15rem;
+                    font-weight: 800;
+                    margin-bottom: 8px;
                     line-height: 1.4;
-                    min-height: 3.0em; /* 제목 두 줄 확보 */
+                    min-height: 2.8em;
+                    color: #1f2937;
+                }
+                .archive-summ {
+                    font-size: 0.9rem; 
+                    color: #4b5563; 
+                    margin-bottom: 15px; 
+                    line-height: 1.6;
                 }
                 div[data-testid="stVerticalBlockBorderWrapper"] > div {
                     height: 100%;
@@ -421,7 +451,7 @@ else:
                 </style>
                 """, unsafe_allow_html=True)
 
-                # [Fix] Grid System (Row-based)
+                # [Fix] Grid System
                 def chunked(iterable, n):
                     return [iterable[i:i + n] for i in range(0, len(iterable), n)]
 
@@ -443,44 +473,42 @@ else:
                         title = title.strip()
                         if title.startswith(":"): title = title[1:].strip()
                         
-                        # [Fix] 썸네일 처리 (CSS 백그라운드 폴백 기법)
+                        # [Fix] 썸네일 URL 검증
                         thumb = meta.get('thumbnail')
-                        if not thumb or not thumb.startswith("http"):
-                           thumb = "https://placehold.co/600x400/5b21b6/ffffff?text=Unicorn+Signal" # 기본 이미지값
+                        # URL이 너무 짧거나(10자 이하) http가 없으면 아예 빈 문자열로 처리하여 바로 폴백이 보이게 함
+                        if not thumb or not isinstance(thumb, str) or len(thumb) < 10 or not thumb.startswith("http"):
+                           thumb = "" 
                         
-                        # [Fix] 요약문 정제 (과거 데이터 불렛포인트화)
+                        # [Fix] 요약문 정제 (불렛포인트 변환)
                         summary = meta.get('summary', '')
-                        # 기존의 불필요한 서두 제거
                         summary = summary.replace("🚀 3줄 요약: 왜 이걸 봐야 할까요?", "").replace("3줄 요약:", "").replace("왜 이걸 봐야 할까요?", "").strip()
                         
-                        # 만약 불렛포인트가 없다면 온점/물음표 기준으로 나눔 (간이 포맷팅)
                         if "- " not in summary:
                             sentences = summary.replace("?", "?|").replace(".", ".|").split("|")
                             clean_sentences = [s.strip() for s in sentences if len(s.strip()) > 10]
-                            # 최대 3개까지만
                             summary = "<br>".join([f"• {s}" for s in clean_sentences[:3]])
                         else:
-                            # 이미 불렛이면 줄바꿈만 br로
                             summary = summary.replace("\n", "<br>")
 
+                        # HTML 렌더링 (이미지 로드 실패 시 투명화 -> 배경 그라데이션 노출)
                         cols[i].markdown(f"""
                         <div class="archive-card-container">
-                            <div class="archive-thumb-wrapper" style="background-image: url('https://placehold.co/600x400/5b21b6/ffffff?text=Unicorn+Signal'); background-size: cover; border-radius: 8px;">
+                            <div class="archive-thumb-wrapper">
+                                <div class="archive-thumb-placeholder-text">Unicorn Signal</div>
                                 <img src="{thumb}" class="archive-thumb" 
-                                     style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;"
-                                     onerror="this.style.display='none';">
+                                     onerror="this.style.opacity='0';" 
+                                     onload="this.style.opacity='1';">
                             </div>
-                            <div style="margin-top: 10px;">
+                            <div>
                                 <div class="archive-title">{title}</div>
-                                <div style="color: #666; font-size: 0.85rem; margin-bottom: 8px;">{meta.get('date', '')}</div>
-                                <div style="font-size: 0.85rem; color: #444; margin-bottom: 15px; line-height: 1.5;">
+                                <div style="color: #6b7280; font-size: 0.8rem; margin-bottom: 8px;">{meta.get('date', '')}</div>
+                                <div class="archive-summ">
                                     {summary}
                                 </div>
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
                         
-                        # 버튼은 Streamlit 네이티브 위젯 사용 (이벤트 처리 위해)
                         with cols[i]:
                              unique_key = f"read_{os.path.basename(jpath)}"
                              if st.button("읽기 ➡️", key=unique_key):
