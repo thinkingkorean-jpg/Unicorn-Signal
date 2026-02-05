@@ -158,8 +158,12 @@ with tab2:
                                     with open(html_file_path, 'r', encoding='utf-8') as hf:
                                         content = hf.read()
                                     # 세션 스테이트에 저장해서 탭 이동 효과
+                                    # 세션 스테이트에 저장해서 탭 이동 효과
                                     st.session_state['selected_html'] = content
                                     st.rerun()
+                except Exception as e:
+                    # JSON 파일이 깨져있거나 읽을 수 없을 때
+                    st.error(f"Error loading {os.path.basename(json_file)}")
 
 # 탭 밖에서 선택된 뉴스레터 보여주기 (Overlay 형태)
 if 'selected_html' in st.session_state:
