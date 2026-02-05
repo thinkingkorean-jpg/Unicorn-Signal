@@ -48,9 +48,10 @@ if __name__ == "__main__":
     print("[SCHEDULER] Will run every day at 08:00 AM.")
     print("[SCHEDULER] Press Ctrl+C to stop.")
     
-    schedule.every().day.at("08:00").do(job)
+    # 매일 아침 7시, 오후 3시에 실행
+    schedule.every().day.at("07:00").do(job)
+    schedule.every().day.at("15:00").do(job)
     
-    # 테스트용 (주석 처리)
     # schedule.every(10).seconds.do(job)
     
     while True:

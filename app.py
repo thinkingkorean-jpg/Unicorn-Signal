@@ -101,26 +101,74 @@ html_files.sort(key=os.path.getmtime, reverse=True) # 최신순 정렬
 
 with tab1:
     # 1. Hero Section (상단 배너)
+    # 제목은 사이드바에 있으므로 로고와 슬로건만 강조
     st.markdown("""
-    <div style="text-align: center; padding: 20px 0 40px 0;">
-        <h1>🦄 Unicorn Signal</h1>
-        <p style="font-size: 1.2rem; color: #555;">
+    <div style="text-align: center; padding: 10px 0 20px 0;">
+        <div style="font-size: 4rem;">🦄</div>
+        <p style="font-size: 1.2rem; color: #555; margin-top: -10px;">
             "바쁜 1인 기업가를 위한, <b>AI가 떠먹여주는 테크 트렌드</b>"
         </p>
     </div>
     """, unsafe_allow_html=True)
 
-    # 2. 대시보드 (KPI)
-    col1, col2, col3 = st.columns(3)
-    
+    # 2. 대시보드 (KPI) - 작고 깔끔하게 변경
     # 최신 주제 가져오기
-    latest_topic = "준비 중..."
+    latest_topic = "-"
     if html_files:
         latest_topic = os.path.basename(html_files[0]).split('_')[1].replace('.html', '').replace('_', ' ')
 
-    col1.metric("🚀 오늘의 트렌드", latest_topic)
-    col2.metric("📚 누적 리포트", f"{len(html_files)}건")
-    col3.metric("⚡ AI 가동 상태", "Active Online")
+    # Custom CSS for metrics
+    st.markdown("""
+    <style>
+    .metric-container {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    .metric-card {
+        background: white;
+        padding: 15px 25px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        text-align: center;
+        border: 1px solid #eee;
+    }
+    .metric-value {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #1f2937;
+    }
+    .metric-label {
+        font-size: 0.8rem;
+        color: #6b7280;
+    }
+    .status-badge {
+        background-color: #dcfce7;
+        color: #166534;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div class="metric-container">
+        <div class="metric-card">
+            <div class="metric-label">🚀 Today's Topic</div>
+            <div class="metric-value">{latest_topic}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">📚 Reports</div>
+            <div class="metric-value">{len(html_files)}</div>
+        </div>
+        <div class="metric-card" style="display: flex; align-items: center; justify-content: center;">
+            <span class="status-badge">⚡ ONLINE</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
     st.divider()
 
@@ -150,6 +198,41 @@ with tab1:
         
         if st.button("🚀 지금 즉시 리포트 생성하기 (Admin Only)"):
             st.warning("서버 콘솔에서 `python main.py`를 실행해주세요!")
+
+# -------------------------------------------------------------------------
+# 🔒 관리자 대시보드 (Admin Dashboard)
+# -------------------------------------------------------------------------
+with st.sidebar:
+    st.divider()
+    with st.expander("🔒 주인장 전용 (Admin)"):
+        admin_pw = st.text_input("비밀번호", type="password")
+        if admin_pw == "unicorn123":  # 실제 운영 시엔 .env로 관리 권장
+            st.success("접속 승인! 🔓")
+            st.session_state['is_admin'] = True
+        elif admin_pw:
+            st.error("비밀번호 오류")
+
+if st.session_state.get('is_admin'):
+    st.divider()
+    st.subheader("📊 Admin Dashboard")
+    
+    # 구독자 데이터 읽기
+    sub_count = 0
+    if os.path.exists('subscribers.csv'):
+        with open('subscribers.csv', 'r') as f:
+            sub_count = len(f.readlines()) - 1 # 헤더 제외
+
+    # 가상 수익 (예시)
+    revenue = sub_count * 1000 # 인당 1000원 가치로 산정
+    
+    # 메트릭 표시
+    a1, a2, a3 = st.columns(3)
+    a1.metric("👥 총 구독자", f"{sub_count}명", "+2 (Today)")
+    a2.metric("💰 예상 광고 수익", f"₩{revenue:,}", "Top 1%")
+    a3.metric("📅 다음 발행", "15:00 PM")
+    
+    st.caption("※ 이 화면은 관리자(본인)에게만 보입니다.")
+    st.bar_chart({"Day 1": 10, "Day 2": 15, "Day 3": sub_count}) # 성장이력 그래프 예시
 
 import json
 
