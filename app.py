@@ -388,27 +388,46 @@ else:
             if not json_files:
                 st.info("보관된 리포트가 없습니다.")
             else:
-                cols = st.columns(3)
-                for i, jpath in enumerate(json_files):
-                    with open(jpath, 'r', encoding='utf-8') as f:
-                        try:
-                            meta = json.load(f)
-                        except:
-                            continue
-                            
-                    with cols[i % 3]:
-                        with st.container(border=True):
-                            # 썸네일
-                            thumb = meta.get('thumbnail')
-                            if thumb: st.image(thumb, use_container_width=True)
-                            else: st.markdown("🦄")
-                            
-                            st.subheader(meta.get('title', '제목 없음'))
-                            st.caption(meta.get('date', ''))
-                            # 요약문 표시
-                            summary = meta.get('summary', '')
-                            if summary:
-                                st.write(summary[:80] + "...")
+            else:
+                # [Fix] Archive Gallery Grid System (Row-based)
+                def chunked(iterable, n):
+                    return [iterable[i:i + n] for i in range(0, len(iterable), n)]
+
+                rows = chunked(json_files, 3)
+                
+                for row_files in rows:
+                    cols = st.columns(3)
+                    for i, jpath in enumerate(row_files):
+                        with open(jpath, 'r', encoding='utf-8') as f:
+                            try:
+                                meta = json.load(f)
+                            except:
+                                continue
+                        
+                        # [Fix] 제목 정제 (유니콘 시그널 접두사 강제 제거)
+                        title = meta.get('title', '제목 없음').replace("유니콘 시그널:", "").replace("🦄", "").strip()
+                        if title.startswith(":"): title = title[1:].strip()
+                        
+                        with cols[i]:
+                            with st.container(border=True):
+                                # 썸네일 (에러 방지 및 기본 이미지)
+                                thumb = meta.get('thumbnail')
+                                if not thumb or "http" not in thumb:
+                                    # 유니콘 시그널 기본 썸네일
+                                    thumb = "https://placehold.co/600x400/1e293b/FFF?text=Unicorn+Signal"
+                                
+                                try:
+                                    st.image(thumb, use_container_width=True)
+                                except:
+                                    st.image("https://placehold.co/600x400/ef4444/FFF?text=Error", use_container_width=True)
+                                
+                                st.markdown(f"**{title}**")
+                                st.caption(meta.get('date', ''))
+                                
+                                # 요약문 표시
+                                summary = meta.get('summary', '')
+                                if summary:
+                                    st.write(summary[:60] + "...")
 
                             if st.button("읽기 ➡️", key=f"read_{i}"):
                                 target_html = jpath.replace('.json', '.html')
