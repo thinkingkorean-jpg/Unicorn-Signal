@@ -164,6 +164,13 @@ with st.sidebar:
 # -------------------------------------------------------------------------
 # 4. Main Page Routing
 # -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# 4. Main Page Routing
+# -------------------------------------------------------------------------
+# 공통 데이터 로딩
+analytics = load_analytics()
+sub_df = load_subscribers()
+
 if st.session_state.get('is_admin', False):
     # ==========================
     # ADMIN DASHBOARD
@@ -175,9 +182,6 @@ if st.session_state.get('is_admin', False):
         
     st.divider()
     
-    # 데이터 집계
-    analytics = load_analytics()
-    sub_df = load_subscribers()
     total_visits = analytics.get('visits', 0)
     sub_count = len(sub_df)
     
@@ -194,7 +198,16 @@ if st.session_state.get('is_admin', False):
     likes_data = analytics.get('likes', {})
     if likes_data:
         # Dictionary to DataFrame
-        likes_list = [{"Topic": k.replace('.html','').split('_')[-1], "Likes": v} for k,v in likes_data.items()]
+        # Topic 파싱 개선: 날짜_주제.html -> 주제
+        likes_list = []
+        for k, v in likes_data.items():
+            topic = k
+            if '_' in k:
+                parts = k.split('_', 1) # 첫번째 _로만 분리 (날짜, 나머지)
+                if len(parts) > 1:
+                    topic = parts[1].replace('.html', '').replace('_', ' ')
+            likes_list.append({"Topic": topic, "Likes": v})
+            
         df_likes = pd.DataFrame(likes_list).sort_values('Likes', ascending=False)
         st.bar_chart(df_likes, x="Topic", y="Likes")
     else:
@@ -205,12 +218,14 @@ else:
     # PUBLIC PAGE
     # ==========================
     
-    # [수정] 메인 Hero 섹션: 사용자 요청대로 귀여운 유니콘 이미지 + 중앙 정렬
+    # [수정] 메인 Hero 섹션: 텍스트 제목 제거, 로고와 슬로건만 유지
     st.markdown("""
     <div style="text-align: center; padding: 20px 0;">
-        <img src="https://emojigraph.org/media/apple/unicorn_1f984.png" width="100">
-        <h1 style="margin-top: 10px;">Unicorn Signal</h1>
-        <p style="color: #666;">"바쁜 1인 기업가를 위한, AI가 떠먹여주는 테크 트렌드"</p>
+        <img src="https://emojigraph.org/media/apple/unicorn_1f984.png" width="120">
+        <p style="color: #555; font-size: 1.1rem; margin-top: 15px;">
+            <b>"바쁜 1인 기업가를 위한, AI가 떠먹여주는 테크 트렌드"</b><br>
+            <span style="font-size: 0.9rem; color: #888;">매일 아침 07:00, 오후 15:00 / 3줄 요약 + 인사이트</span>
+        </p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -223,34 +238,40 @@ else:
 
     # 1) 홈 탭
     with tab_home:
-        # KPI 배지 (간단하게)
+        # KPI 배지 & 최신 토픽 파싱 개선
         latest_title = "No Data"
         if html_files:
-            latest_title = os.path.basename(html_files[0]).split('_')[1] if '_' in os.path.basename(html_files[0]) else "Tech Trend"
+            filename = os.path.basename(html_files[0])
+            # 2024-02-05_Generative_AI.html -> Generative AI
+            if '_' in filename:
+                parts = filename.split('_', 1)
+                if len(parts) > 1:
+                    latest_title = parts[1].replace('.html', '').replace('_', ' ')
+            else:
+                latest_title = filename.replace('.html', '')
             
         st.markdown(f"""
-        <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 30px;">
+        <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 20px;">
             <div class="metric-card">🔥 Topic: <b>{latest_title}</b></div>
             <div class="metric-card">📑 Reports: <b>{len(html_files)}</b></div>
             <div class="metric-card" style="background:#dcfce7; color:#166534;">⚡ Status: <b>Online</b></div>
         </div>
         """, unsafe_allow_html=True)
         
-        # 최신 뉴스레터 표시
+        # 최신 뉴스레터 표시 (높이 증가로 스크롤 통일감 유도)
         if html_files:
             with open(html_files[0], 'r', encoding='utf-8') as f:
-                st.components.v1.html(f.read(), height=800, scrolling=True)
+                # height를 충분히 주어 이중 스크롤 방지 시도
+                st.components.v1.html(f.read(), height=1200, scrolling=False)
+                st.caption("※ 내용이 잘렸다면 아카이브에서 '읽기'를 눌러 전체화면으로 보세요.")
         else:
             st.info("👋 현재 발행된 뉴스레터가 없습니다. 스케줄러가 곧 첫 리포트를 배달합니다!")
 
     # 2) 아카이브 탭
     with tab_archive:
-        # [수정] 보기 모드 vs 목록 모드 (Toggle)
-        
         if 'selected_html' in st.session_state and st.session_state['selected_html']:
             # >>> 상세 보기 화면 <<<
             
-            # [수정] 상단 컨트롤 바 (뒤로가기 + 좋아요)
             c_back, c_like = st.columns([1, 4])
             with c_back:
                 if st.button("⬅️ 목록으로"):
@@ -258,7 +279,8 @@ else:
                     st.rerun()
             with c_like:
                 current_file = st.session_state.get('selected_file_name', 'unknown')
-                if st.button(f"❤️ 좋아요 ({analytics.get('likes', {}).get(current_file, 0)})"):
+                like_count = analytics.get('likes', {}).get(current_file, 0)
+                if st.button(f"❤️ 좋아요 ({like_count})"):
                     success, msg = toggle_like(current_file)
                     if success:
                         st.balloons()
@@ -267,7 +289,7 @@ else:
                         st.info(msg)
             
             # 뉴스레터 본문
-            st.components.v1.html(st.session_state['selected_html'], height=900, scrolling=True)
+            st.components.v1.html(st.session_state['selected_html'], height=1200, scrolling=True)
             
         else:
             # >>> 목록 화면 <<<
@@ -291,8 +313,11 @@ else:
                             
                             st.subheader(meta.get('title', '제목 없음'))
                             st.caption(meta.get('date', ''))
-                            
-                            # [수정] '읽기' 버튼 누르면 selected_html 세션에 담고 rerun -> 상세 화면 전환
+                            # 요약문 표시
+                            summary = meta.get('summary', '')
+                            if summary:
+                                st.write(summary[:80] + "...")
+
                             if st.button("읽기 ➡️", key=f"read_{i}"):
                                 target_html = jpath.replace('.json', '.html')
                                 if os.path.exists(target_html):
