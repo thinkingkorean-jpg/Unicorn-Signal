@@ -12,13 +12,19 @@ SENDER_EMAIL = os.getenv("SENDER_EMAIL", "your_email@example.com")
 SENDER_PASSWORD = os.getenv("SMTP_PASSWORD")
 SENDER_NAME = os.getenv("SENDER_NAME", "Unicorn Signal")
 
-def send_email(subject, html_content, to_email="jh.lee267@cj.net"):
-    """
+def send_email(subject, html_content, to_email=None):
     HTML 뉴스레터를 이메일로 발송합니다.
     """
+    if to_email is None:
+        to_email = os.getenv("TO_EMAIL")
+        
     if not SENDER_PASSWORD:
         print("[EMAIL] SMTP_PASSWORD not set. Skipping email send.")
         print(f"[EMAIL] Would have sent to {to_email} with subject: {subject}")
+        return False
+        
+    if not to_email:
+        print("[ERROR] No recipient email (TO_EMAIL) provided.")
         return False
 
     try:
