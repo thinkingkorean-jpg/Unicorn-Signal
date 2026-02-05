@@ -259,7 +259,7 @@ else:
     # [수정] 메인 Hero 섹션: 텍스트 제목 제거, 로고와 슬로건만 유지
     st.markdown("""
     <div style="text-align: center; padding: 20px 0;">
-        <img src="https://emojigraph.org/media/apple/unicorn_1f984.png" width="120">
+        <img src="https://emojigraph.org/media/apple/unicorn_1f984.png" width="120" style="display: block; margin: 0 auto;">
         <p style="color: #555; font-size: 1.1rem; margin-top: 15px;">
             <b>"바쁜 1인 기업가를 위한, AI가 떠먹여주는 테크 트렌드"</b><br>
             <span style="font-size: 0.9rem; color: #888;">매일 아침 07:00, 오후 15:00 / 3줄 요약 + 인사이트</span>

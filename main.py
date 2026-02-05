@@ -67,7 +67,13 @@ async def main(keyword=None):
         safe_title = ai_title.encode('cp949', errors='ignore').decode('cp949')
     except:
         safe_title = ai_title
-        
+    
+    # [UI Fix] 제목에서 '유니콘 시그널:' 브랜드명 중복 제거
+    replacements = ["유니콘 시그널:", "유니콘 시그널 :", "Unicorn Signal:", "Unicorn Signal :"]
+    for r in replacements:
+        safe_title = safe_title.replace(r, "")
+    safe_title = safe_title.strip()
+    
     print(f"[AI] Generated Title: {safe_title}")
     
     # 6. HTML 생성 (Jinja2)
