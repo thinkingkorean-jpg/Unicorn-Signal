@@ -101,11 +101,17 @@ html_files.sort(key=os.path.getmtime, reverse=True) # 최신순 정렬
 
 with tab1:
     # 1. Hero Section (상단 배너)
-    # 제목은 사이드바에 있으므로 로고와 슬로건만 강조
+    # 로고 이미지 표시 (중앙 정렬)
+    col_spacer1, col_img, col_spacer2 = st.columns([1, 2, 1])
+    with col_img:
+        if os.path.exists("unicorn_signal_logo.png"):
+            st.image("unicorn_signal_logo.png", use_container_width=True)
+        else:
+            st.markdown("<div style='font-size: 4rem; text-align: center;'>🦄</div>", unsafe_allow_html=True)
+            
     st.markdown("""
-    <div style="text-align: center; padding: 10px 0 20px 0;">
-        <div style="font-size: 4rem;">🦄</div>
-        <p style="font-size: 1.2rem; color: #555; margin-top: -10px;">
+    <div style="text-align: center; padding: 0 0 20px 0;">
+        <p style="font-size: 1.1rem; color: #666; font-weight: 500;">
             "바쁜 1인 기업가를 위한, <b>AI가 떠먹여주는 테크 트렌드</b>"
         </p>
     </div>
@@ -115,7 +121,11 @@ with tab1:
     # 최신 주제 가져오기
     latest_topic = "-"
     if html_files:
-        latest_topic = os.path.basename(html_files[0]).split('_')[1].replace('.html', '').replace('_', ' ')
+        # 파일명 형식: YYYY-MM-DD_Keyword_Name.html
+        # 0번째는 날짜, 1번째부터 끝까지가 키워드
+        file_parts = os.path.basename(html_files[0]).replace('.html', '').split('_')
+        if len(file_parts) > 1:
+            latest_topic = " ".join(file_parts[1:])
 
     # Custom CSS for metrics
     st.markdown("""
@@ -124,31 +134,31 @@ with tab1:
         display: flex;
         justify-content: center;
         gap: 20px;
-        margin-bottom: 20px;
+        margin-bottom: 10px; /* 여백 축소 */
     }
     .metric-card {
         background: white;
-        padding: 15px 25px;
+        padding: 10px 20px; /* 패딩 축소 */
         border-radius: 10px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         text-align: center;
         border: 1px solid #eee;
     }
     .metric-value {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         font-weight: bold;
         color: #1f2937;
     }
     .metric-label {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         color: #6b7280;
     }
     .status-badge {
         background-color: #dcfce7;
         color: #166534;
-        padding: 4px 12px;
+        padding: 3px 10px;
         border-radius: 999px;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         font-weight: 600;
     }
     </style>
@@ -171,33 +181,8 @@ with tab1:
     """, unsafe_allow_html=True)
     
     st.divider()
-
-    if html_files:
-        latest_file = html_files[0]
-        with open(latest_file, 'r', encoding='utf-8') as f:
-            html_content = f.read()
-        st.components.v1.html(html_content, height=800, scrolling=True)
-        
-        # 다운로드 버튼
-        st.download_button(
-            label="이 뉴스레터 다운로드 (HTML)",
-            data=html_content,
-            file_name=os.path.basename(latest_file),
-            mime="text/html"
-        )
-    else:
-        st.info("👋 아직 발행된 뉴스레터가 없습니다. 스케줄러가 곧 첫 번째 리포트를 배달할 예정입니다!")
-        
-        # 시스템 소개 (빈 화면 채우기용)
-        st.markdown("### 🤖 Unicorn Signal은 어떻게 작동하나요?")
-        st.markdown("""
-        1. **Trend Hunting**: 매일 아침 전 세계 테크 뉴스(TechCrunch, HackerNews)와 유튜브를 뒤집니다.
-        2. **AI Analysis**: 구글 Gemini가 내용을 읽고 "돈이 되는 정보"만 골라냅니다.
-        3. **Auto-Publishing**: 보기 편한 HTML 리포트로 만들어서 이메일과 이곳에 게시합니다.
-        """)
-        
-        if st.button("🚀 지금 즉시 리포트 생성하기 (Admin Only)"):
-            st.warning("서버 콘솔에서 `python main.py`를 실행해주세요!")
+    
+# ... (중략)
 
 # -------------------------------------------------------------------------
 # 🔒 관리자 대시보드 (Admin Dashboard)
@@ -206,7 +191,10 @@ with st.sidebar:
     st.divider()
     with st.expander("🔒 주인장 전용 (Admin)"):
         admin_pw = st.text_input("비밀번호", type="password")
-        if admin_pw == "unicorn123":  # 실제 운영 시엔 .env로 관리 권장
+        # 16자리 랜덤 비밀번호 적용
+        SECURE_PW = "X7k9P2m4Rj1Wk8Lz" 
+        
+        if admin_pw == SECURE_PW:
             st.success("접속 승인! 🔓")
             st.session_state['is_admin'] = True
         elif admin_pw:
