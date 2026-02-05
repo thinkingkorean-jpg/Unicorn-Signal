@@ -124,10 +124,12 @@ async def main(keyword=None):
                 thumbnail_url = item['thumbnail']
                 break
     
-    # 3. 그래도 없으면 깔끔한 텍스트 썸네일 (placeholder)
+    # 3. 그래도 없으면 깔끔한 텍스트 썸네일 (placeholder) -> [Update] AI 썸네일 생성
     if not thumbnail_url:
-        safe_keyword = base_keywords.replace(' ', '+')
-        thumbnail_url = f"https://placehold.co/600x400/1e293b/FFF?text={safe_keyword}"
+        print("[AI] Generating Thumbnail Image...")
+        from ai_agent import generate_thumbnail
+        thumbnail_url = generate_thumbnail(base_keywords)
+        print(f"[AI] Thumbnail Generated: {thumbnail_url}")
 
     # 요약문 추출 (HTML의 summary-box에서 텍스트만 발췌)
     try:

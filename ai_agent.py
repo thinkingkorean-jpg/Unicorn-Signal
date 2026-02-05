@@ -117,3 +117,23 @@ def summarize_content(content_list):
         
     except Exception as e:
         return "Insight Generation Failed", f"<div><h3>⚠️ 분석 생성 실패</h3><p>{e}</p></div>"
+
+def generate_thumbnail(keyword):
+    """
+    키워드를 기반으로 AI 썸네일 이미지를 생성합니다.
+    (Note: Gemini Imagen API는 별도 권한이 필요하므로, 즉시 사용 가능한 Pollinations AI를 활용합니다.)
+    """
+    import random
+    import urllib.parse
+    
+    # 프롬프트 엔지니어링 (Unicorn Signal 스타일)
+    style_prompt = "futuristic, 3d render, isometric, high tech, tech trend, purple and neon lighting, unicorn signal style, minimal, premium"
+    full_prompt = f"{keyword}, {style_prompt}"
+    encoded_prompt = urllib.parse.quote(full_prompt)
+    
+    # Pollinations AI (Free Stable Diffusion API) 사용하여 이미지 URL 생성
+    # 랜덤 시드로 매번 다른 이미지 생성
+    seed = random.randint(1, 99999)
+    image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=450&seed={seed}&nologo=true"
+    
+    return image_url
