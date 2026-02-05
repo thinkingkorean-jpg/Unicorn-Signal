@@ -1,0 +1,17 @@
+# Environment variables
+.env
+.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# VS Code
+.vscode/
+
+# Archives (Optional - GitHub에 올릴지 말지 결정)
+# archives/
+
+# Subscribers (개인정보 보호)
+subscribers.csv

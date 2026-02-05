@@ -1,0 +1,11 @@
+feedparser
+youtube-transcript-api
+youtube-search
+google-generativeai
+python-dotenv
+jinja2
+beautifulsoup4
+requests
+schedule
+streamlit
+pandas
