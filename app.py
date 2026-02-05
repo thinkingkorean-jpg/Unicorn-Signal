@@ -285,9 +285,17 @@ else:
         if html_files:
             with open(html_files[0], 'r', encoding='utf-8') as f:
                 content = f.read()
-                # [Fix] 과도한 Cleaning 로직 제거 (CSS 깨짐 방지)
-                # 원본 HTML에서 이미 주석을 제거했으므로, 바로 렌더링
-                # div로 감싸면 Markdown Code Block으로 인식되지 않음
+                
+                # [Fix] 기존 파일들의 코드 노출(Code Block) 및 주석 제거를 위한 안전한 Cleaning
+                # 1. 특정 주석만 타겟팅하여 제거 (CSS 등 다른 주석 건드리지 않음)
+                for comment in ['<!-- Main Content -->', '<!-- Subscription Section -->', '<!-- Footer -->']:
+                    content = content.replace(comment, '')
+                
+                # 2. 모든 라인의 앞쪽 공백 제거 (Markdown Code Block 인식 방지)
+                import re
+                content = re.sub(r'^[ \t]+', '', content, flags=re.MULTILINE)
+                
+                # [다크모드 대응] 흰색 종이 스타일(newsletter-paper) 적용
                 st.markdown(f'<div class="newsletter-paper">{content}</div>', unsafe_allow_html=True)
         else:
             st.info("👋 현재 발행된 뉴스레터가 없습니다. 스케줄러가 곧 첫 리포트를 배달합니다!")
@@ -303,8 +311,17 @@ else:
                 st.rerun()
             
             # 뉴스레터 본문
-            # [Fix] 과도한 Cleaning 로직 제거
+            # [Fix] 기존 파일들을 위한 안전한 Cleaning
             html_content = st.session_state['selected_html']
+            
+            # 1. 특정 주석 제거
+            for comment in ['<!-- Main Content -->', '<!-- Subscription Section -->', '<!-- Footer -->']:
+                html_content = html_content.replace(comment, '')
+            
+            # 2. 공백 제거
+            import re
+            html_content = re.sub(r'^[ \t]+', '', html_content, flags=re.MULTILINE)
+            
             st.markdown(f'<div class="newsletter-paper">{html_content}</div>', unsafe_allow_html=True)
             
             st.divider()
