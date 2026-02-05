@@ -259,12 +259,12 @@ else:
         </div>
         """, unsafe_allow_html=True)
         
-        # 최신 뉴스레터 표시 (높이 증가로 스크롤 통일감 유도 -> 스크롤 활성화)
+        # 최신 뉴스레터 표시 (iframe 제거 -> st.markdown으로 통합 스크롤 구현)
         if html_files:
             with open(html_files[0], 'r', encoding='utf-8') as f:
-                # height를 유지하되 scrolling=True로 변경하여 내용 잘림 방지
-                st.components.v1.html(f.read(), height=1000, scrolling=True)
-                st.caption("※ 화면이 작아 안 보이면 스크롤을 내려주세요.")
+                content = f.read()
+                # iframe 대신 직접 렌더링하여 자연스러운 스크롤 유도
+                st.markdown(content, unsafe_allow_html=True)
         else:
             st.info("👋 현재 발행된 뉴스레터가 없습니다. 스케줄러가 곧 첫 리포트를 배달합니다!")
 
@@ -278,8 +278,8 @@ else:
                 del st.session_state['selected_html']
                 st.rerun()
             
-            # 뉴스레터 본문
-            st.components.v1.html(st.session_state['selected_html'], height=1000, scrolling=True)
+            # 뉴스레터 본문 (통합 스크롤)
+            st.markdown(st.session_state['selected_html'], unsafe_allow_html=True)
             
             st.divider()
             
@@ -287,7 +287,7 @@ else:
             current_file = st.session_state.get('selected_file_name', 'unknown')
             like_count = analytics.get('likes', {}).get(current_file, 0)
             
-            # 하단 중앙 정렬 느낌을 위한 컬럼 분할
+            # 하단 중앙 정렬
             c_left, c_center, c_right = st.columns([1, 2, 1])
             with c_center:
                 if st.button(f"❤️ 이 리포트가 맘에 드셨다면? (좋아요 {like_count})", use_container_width=True):
