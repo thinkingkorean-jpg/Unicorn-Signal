@@ -38,6 +38,42 @@ st.markdown("""
 
 # 구독자 파일 경로
 SUBSCRIBERS_FILE = 'subscribers.csv'
+ANALYTICS_FILE = 'analytics.json'
+
+# --- Analytics Functions ---
+def load_analytics():
+    if not os.path.exists(ANALYTICS_FILE):
+        return {"visits": 0, "likes": {}}
+    with open(ANALYTICS_FILE, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+def save_analytics(data):
+    with open(ANALYTICS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+def increment_visit():
+    if 'visited' not in st.session_state:
+        data = load_analytics()
+        data['visits'] += 1
+        save_analytics(data)
+        st.session_state['visited'] = True
+
+def toggle_like(filename):
+    # 세션별로 좋아요 여부 추적 (Cookie 대용)
+    liked_key = f"liked_{filename}"
+    if st.session_state.get(liked_key, False):
+        return False, "이미 좋아요를 누르셨습니다! 😉"
+    
+    data = load_analytics()
+    if filename not in data['likes']:
+        data['likes'][filename] = 0
+    data['likes'][filename] += 1
+    save_analytics(data)
+    st.session_state[liked_key] = True
+    return True, "이 리포트를 좋아합니다! ❤️"
+
+# 앱 시작 시 방문자 수 카운트
+increment_visit()
 
 def load_subscribers():
     if not os.path.exists(SUBSCRIBERS_FILE):
@@ -56,7 +92,7 @@ def save_subscriber(email, nickname):
         'nickname': nickname, 
         'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }])
-    # concat 사용 권장 (append는 deprecated)
+    # concat 사용 권장
     df = pd.concat([df, new_entry], ignore_index=True)
     df.to_csv(SUBSCRIBERS_FILE, index=False)
     return True, "구독 신청이 완료되었습니다! 매일 아침 만나요 👋"
@@ -264,8 +300,8 @@ with tab2:
                                     with open(html_file_path, 'r', encoding='utf-8') as hf:
                                         content = hf.read()
                                     # 세션 스테이트에 저장해서 탭 이동 효과
-                                    # 세션 스테이트에 저장해서 탭 이동 효과
                                     st.session_state['selected_html'] = content
+                                    st.session_state['selected_file_name'] = meta.get('filename', 'unknown')
                                     st.rerun()
                 except Exception as e:
                     # JSON 파일이 깨져있거나 읽을 수 없을 때
