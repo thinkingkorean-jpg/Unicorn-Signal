@@ -388,7 +388,31 @@ else:
             if not json_files:
                 st.info("보관된 리포트가 없습니다.")
             else:
-                # [Fix] Archive Gallery Grid System (Row-based)
+                # [Fix] 정렬 (파일명 역순 = 날짜 최신순)
+                json_files = sorted(json_files, reverse=True)
+
+                # [Fix] 카드 높이 통일을 위한 CSS 주입
+                st.markdown("""
+                <style>
+                div[data-testid="stImage"] img {
+                    height: 200px !important;
+                    object-fit: cover !important;
+                }
+                div[data-testid="column"] {
+                    display: flex;
+                    flex-direction: column; 
+                }
+                div[data-testid="stVerticalBlockBorderWrapper"] > div {
+                    height: 100%;
+                    min-height: 450px; /* 카드 최소 높이 강제설정 */
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                }
+                </style>
+                """, unsafe_allow_html=True)
+
+                # [Fix] Grid System (Row-based)
                 def chunked(iterable, n):
                     return [iterable[i:i + n] for i in range(0, len(iterable), n)]
 
@@ -403,7 +427,7 @@ else:
                             except:
                                 continue
                         
-                        # [Fix] 제목 정제 (특수문자 및 브랜드명 확실하게 제거)
+                        # [Fix] 제목 정제
                         title = meta.get('title', '제목 없음')
                         for remove_str in ["유니콘 시그널:", "유니콘 시그널", "Unicorn Signal:", "Unicorn Signal", "🦄"]:
                             title = title.replace(remove_str, "")
@@ -413,26 +437,26 @@ else:
                         
                         with cols[i]:
                             with st.container(border=True):
-                                # 썸네일 (에러 방지: URL이 없거나 유효하지 않으면 기본 이미지)
+                                # 썸네일 검증 (엄격하게)
                                 thumb = meta.get('thumbnail')
-                                if not thumb or not isinstance(thumb, str) or not thumb.startswith("http"):
-                                    thumb = "https://placehold.co/600x400/7c3aed/ffffff?text=Unicorn+Signal"
+                                is_valid_thumb = thumb and isinstance(thumb, str) and thumb.startswith("http") and len(thumb) > 10
+                                
+                                if not is_valid_thumb:
+                                    thumb = "https://placehold.co/600x400/5b21b6/ffffff?text=Unicorn+Signal"
                                 
                                 try:
                                     st.image(thumb, use_container_width=True)
                                 except:
-                                    # 로딩 실패 시 표시할 이미지
                                     st.image("https://placehold.co/600x400/9ca3af/ffffff?text=No+Image", use_container_width=True)
                                 
                                 st.markdown(f"**{title}**")
                                 st.caption(meta.get('date', ''))
                                 
-                                # 요약문 길이 제한 (높이 통일용)
+                                # 요약문
                                 summary = meta.get('summary', '')
                                 if len(summary) > 40: summary = summary[:40] + "..."
                                 st.write(summary)
                                 
-                                # [Fix] Key값 중복 방지 (파일명을 Key로 사용)
                                 unique_key = f"read_{os.path.basename(jpath)}"
                                 if st.button("읽기 ➡️", key=unique_key):
                                     target_html = jpath.replace('.json', '.html')
