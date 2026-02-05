@@ -1,5 +1,7 @@
 import google.generativeai as genai
 import os
+import warnings
+warnings.filterwarnings("ignore") # Suppress FutureWarnings
 from dotenv import load_dotenv
 
 load_dotenv()
