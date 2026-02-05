@@ -271,8 +271,9 @@ else:
     
     # 데이터 로드
     if not os.path.exists('archives'): os.makedirs('archives')
-    html_files = sorted(glob.glob('archives/*.html'), key=os.path.getmtime, reverse=True)
-    json_files = sorted(glob.glob('archives/*.json'), key=os.path.getmtime, reverse=True)
+    # [Fix] 파일명(날짜) 기준으로 정렬 (수정일 기준 X -> 내용 수정해도 순서 유지)
+    html_files = sorted(glob.glob('archives/*.html'), reverse=True)
+    json_files = sorted(glob.glob('archives/*.json'), reverse=True)
 
     # 1) 홈 탭
     # 1) 홈 탭
