@@ -37,6 +37,305 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# 파일 경로
+SUBSCRIBERS_FILE = 'subscribers.csv'
+ANALYTICS_FILE = 'analytics.json'
+
+# --- 함수 정의 ---
+def load_analytics():
+    if not os.path.exists(ANALYTICS_FILE):
+        return {"visits": 0, "likes": {}}
+    try:
+        with open(ANALYTICS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (json.JSONDecodeError, ValueError):
+        return {"visits": 0, "likes": {}}
+
+def save_analytics(data):
+    with open(ANALYTICS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+def increment_visit():
+    if 'visited' not in st.session_state:
+        data = load_analytics()
+        data['visits'] = data.get('visits', 0) + 1
+        save_analytics(data)
+        st.session_state['visited'] = True
+
+def toggle_like(filename):
+    liked_key = f"liked_{filename}"
+    if st.session_state.get(liked_key, False):
+        return False, "이미 좋아요를 누르셨습니다! 😉"
+    
+    data = load_analytics()
+    if 'likes' not in data: data['likes'] = {}
+    
+    if filename not in data['likes']:
+        data['likes'][filename] = 0
+    data['likes'][filename] += 1
+    save_analytics(data)
+    st.session_state[liked_key] = True
+    return True, "이 리포트를 좋아합니다! ❤️"
+
+def load_subscribers():
+    if not os.path.exists(SUBSCRIBERS_FILE):
+        df = pd.DataFrame(columns=['email', 'nickname', 'date'])
+        df.to_csv(SUBSCRIBERS_FILE, index=False)
+        return df
+    return pd.read_csv(SUBSCRIBERS_FILE)
+
+def save_subscriber(email, nickname):
+    df = load_subscribers()
+    if email in df['email'].values:
+        return False, "이미 구독 중인 이메일입니다! 🦄"
+    
+    new_entry = pd.DataFrame([{
+        'email': email, 
+        'nickname': nickname, 
+        'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    }])
+    df = pd.concat([df, new_entry], ignore_index=True)
+    df.to_csv(SUBSCRIBERS_FILE, index=False)
+    return True, "구독 신청이 완료되었습니다! 매일 아침 만나요 👋"
+
+# 앱 시작 시 방문자 수 카운트
+increment_visit()
+
+# -------------------------------------------------------------------------
+# Sidebar
+# -------------------------------------------------------------------------
+with st.sidebar:
+    # 1. 로고: 텍스트 대신 이미지 사용
+    if os.path.exists("unicorn_signal_logo.png"):
+        st.image("unicorn_signal_logo.png", width=200) # 너비 조정
+    else:
+        st.image("https://emojigraph.org/media/apple/unicorn_1f984.png", width=50) 
+        
+    st.markdown("### Unicorn Signal")
+    st.caption("1인 유니콘 기업가를 위한\n트렌드 큐레이션")
+    
+    st.divider()
+    
+    st.subheader("📬 뉴스레터 구독하기")
+    with st.form("subscribe_form"):
+        nickname = st.text_input("별명", placeholder="예: 100억 부자")
+        email = st.text_input("이메일", placeholder="example@gmail.com")
+        submit = st.form_submit_button("무료 구독하기")
+        
+        if submit:
+            if email and nickname:
+                success, msg = save_subscriber(email, nickname)
+                if success:
+                    st.success(msg)
+                    st.balloons()
+                else:
+                    st.warning(msg)
+            else:
+                st.error("이메일과 별명을 모두 입력해주세요.")
+    
+    st.divider()
+    
+    # 관리자 로그인 (맨 아래에 숨김)
+    st.markdown("<br>" * 5, unsafe_allow_html=True) 
+    with st.expander("🔒 Admin Access"):
+        admin_pw = st.text_input("Password", type="password", key="admin_pw_login")
+        SECURE_PW = "X7k9P2m4Rj1Wk8Lz" 
+        
+        if st.button("Login"):
+            if admin_pw == SECURE_PW:
+                st.session_state['is_admin'] = True
+                st.rerun()
+            else:
+                st.error("Access Denied")
+
+# -------------------------------------------------------------------------
+# Main Page Routing
+# -------------------------------------------------------------------------
+
+# 1. 관리자 모드
+if st.session_state.get('is_admin', False):
+    st.title("📊 Admin Dashboard")
+    
+    if st.button("⬅️ 메인 화면으로 돌아가기 (Logout)"):
+        st.session_state['is_admin'] = False
+        st.rerun()
+        
+    st.divider()
+    
+    # 데이터 로딩
+    analytics = load_analytics()
+    sub_df = load_subscribers()
+    sub_count = len(sub_df)
+    total_visits = analytics.get('visits', 0)
+    
+    # 가상 수익 (구독자 * 1000 + 방문자 * 10)
+    revenue = (sub_count * 1000) + (total_visits * 10)
+    
+    # 지표 카드
+    c1, c2, c3 = st.columns(3)
+    c1.metric("👥 총 구독자", f"{sub_count}명")
+    c2.metric("👀 총 방문자", f"{total_visits}회")
+    c3.metric("💰 예상 수익", f"₩{revenue:,}")
+    
+    st.markdown("### 📈 인기 리포트 (Likes)")
+    likes_data = analytics.get('likes', {})
+    if likes_data:
+        likes_df = pd.DataFrame(list(likes_data.items()), columns=['Filename', 'Likes'])
+        # 파일명에서 키워드 추출
+        likes_df['Topic'] = likes_df['Filename'].apply(lambda x: x.split('_')[1] if '_' in x else x)
+        likes_df = likes_df.sort_values(by='Likes', ascending=False).head(5)
+        st.bar_chart(likes_df, x="Topic", y="Likes")
+    else:
+        st.info("아직 좋아요 데이터가 없습니다.")
+
+# 2. 일반 사용자 모드 (Public)
+else:
+    # 2.1 상단 배너 (Hero) - 로고 이미지 사용
+    col_centered = st.columns([1, 6, 1])
+    with col_centered[1]:
+        # 로고를 중앙에 배치
+        if os.path.exists("unicorn_signal_logo.png"):
+            # 로고가 너무 크면 use_container_width=False로 하고 width 조절
+            st.image("unicorn_signal_logo.png", width=300) 
+            # 이미지가 가운데 오도록 CSS 트릭 없이 편법(columns) 씀
+        else:
+            st.title("🦄 Unicorn Signal")
+            
+        st.markdown("""
+        <div style="text-align: center; margin-bottom: 20px;">
+            <p style="font-size: 1.2rem; color: #555;">
+                "바쁜 1인 기업가를 위한, <b>AI가 떠먹여주는 테크 트렌드</b>"
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # 2.2 메인 탭 구성
+    tab1, tab2 = st.tabs(["🏠 최신 뉴스레터", "📚 지난 아카이브"])
+
+    # 아카이브 파일 로딩
+    if not os.path.exists('archives'):
+        os.makedirs('archives')
+    
+    html_files = glob.glob('archives/*.html')
+    html_files.sort(key=os.path.getmtime, reverse=True)
+    json_files = glob.glob('archives/*.json')
+    json_files.sort(key=os.path.getmtime, reverse=True)
+
+    # --- TAB 1: 최신 뉴스레터 ---
+    with tab1:
+        # 대시보드 (KPI)
+        latest_topic = "준비 중..."
+        if html_files:
+            try:
+                latest_topic = os.path.basename(html_files[0]).split('_')[1]
+            except:
+                latest_topic = "General Tech"
+        
+        st.markdown(f"""
+        <div style="display: flex; gap: 20px; justify-content: center; margin-bottom: 30px;">
+            <div style="background:#fff; padding:10px 20px; border-radius:10px; border:1px solid #eee; text-align:center;">
+                <div style="font-size:0.8rem; color:#888;">🚀 Today's Topic</div>
+                <div style="font-size:1.1rem; font-weight:bold;">{latest_topic}</div>
+            </div>
+            <div style="background:#fff; padding:10px 20px; border-radius:10px; border:1px solid #eee; text-align:center;">
+                <div style="font-size:0.8rem; color:#888;">📚 Reports</div>
+                <div style="font-size:1.1rem; font-weight:bold;">{len(html_files)}</div>
+            </div>
+            <div style="background:#fff; padding:10px 20px; border-radius:10px; border:1px solid #eee; text-align:center; display:flex; align-items:center;">
+                <span style="background:#dcfce7; color:#166534; padding:4px 10px; border-radius:20px; font-size:0.8rem; font-weight:bold;">⚡ ONLINE</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if html_files:
+            latest_file = html_files[0]
+            with open(latest_file, 'r', encoding='utf-8') as f:
+                html_content = f.read()
+            st.components.v1.html(html_content, height=800, scrolling=True)
+        else:
+            st.info("👋 아직 발행된 뉴스레터가 없습니다. (데이터 수집 대기 중)")
+            st.markdown("매일 07:00, 15:00에 새로운 리포트가 발행됩니다.")
+
+    # --- TAB 2: 아카이브 ---
+    with tab2:
+        # 리스트 보기 vs 상세 보기 (Toggle Logic)
+        if 'selected_html' in st.session_state and st.session_state['selected_html']:
+            # [상세 보기 모드]
+            c_head1, c_head2 = st.columns([1, 10])
+            with c_head1:
+                if st.button("⬅️ 뒤로가기"):
+                    del st.session_state['selected_html']
+                    st.rerun()
+            
+            # 좋아요 
+            current_file = st.session_state.get('selected_file_name', 'unknown')
+            if st.button("❤️ 좋아요 누르기"):
+                success, msg = toggle_like(current_file)
+                if success:
+                    st.balloons()
+                    st.toast(msg, icon="😍")
+                else:
+                    st.toast(msg)
+
+            st.components.v1.html(st.session_state['selected_html'], height=900, scrolling=True)
+            
+        else:
+            # [목록 보기 모드]
+            if not json_files:
+                st.info("보관된 뉴스레터가 없습니다.")
+            else:
+                cols = st.columns(3)
+                for idx, json_file in enumerate(json_files):
+                    with open(json_file, 'r', encoding='utf-8') as f:
+                        try:
+                            meta = json.load(f)
+                            with cols[idx % 3]:
+                                with st.container(border=True):
+                                    if meta.get('thumbnail'):
+                                        st.image(meta['thumbnail'], use_container_width=True)
+                                    else:
+                                        st.markdown("🦄")
+                                        
+                                    st.subheader(meta.get('title', 'No Title'))
+                                    st.caption(meta.get('date', ''))
+                                    st.write(meta.get('summary', '')[:60] + "...")
+                                    
+                                    if st.button("읽기 📖", key=f"read_{idx}"):
+                                        # HTML 파일 로드
+                                        target_html = json_file.replace('.json', '.html')
+                                        if os.path.exists(target_html):
+                                            with open(target_html, 'r', encoding='utf-8') as hf:
+                                                content = hf.read()
+                                            st.session_state['selected_html'] = content
+                                            st.session_state['selected_file_name'] = os.path.basename(target_html)
+                                            st.rerun()
+                        except:
+                            continue
+
+# 스타일 커스텀
+st.markdown("""
+<style>
+    .reportview-container {
+        background: #f9fafb;
+    }
+    .sidebar .sidebar-content {
+        background: #ffffff;
+    }
+    h1 {
+        font-family: 'Merriweather', serif;
+        color: #1f2937;
+    }
+    .stButton>button {
+        background-color: #7c3aed;
+        color: white;
+        border-radius: 6px;
+        border: none;
+        padding: 10px 24px;
+        font-weight: bold;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # 구독자 파일 경로
 SUBSCRIBERS_FILE = 'subscribers.csv'
 ANALYTICS_FILE = 'analytics.json'
