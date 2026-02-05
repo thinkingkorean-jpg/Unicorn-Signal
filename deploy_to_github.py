@@ -16,7 +16,7 @@ def run_command(command, ignore_errors=False):
 
 def main():
     print("---------------------------------------------------")
-    print("🦄 Unicorn Signal: GitHub Deploy Helper")
+    print("Unicorn Signal: GitHub Deploy Helper")
     print("---------------------------------------------------")
 
     # 1. Check Git Installation

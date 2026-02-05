@@ -94,6 +94,27 @@ async def main(keyword=None):
         f.write(output_html)
         
     print(f"\n[DONE] Trend Report Saved: {html_filename}")
+
+    # 7-1. 메타데이터 저장 (For Archive UI)
+    thumbnail_url = "https://emojigraph.org/media/apple/unicorn_1f984.png"
+    # news_items가 있으면 첫 번째 이미지를 썸네일로 사용
+    if 'news_items' in locals() and news_items and news_items[0].get('image'):
+       thumbnail_url = news_items[0]['image']
+       
+    metadata = {
+        "title": f"🦄 {ai_title}",
+        "date": today_str,
+        "keyword": base_keywords,
+        "summary": f"{base_keywords} 트렌드 분석 및 주요 뉴스 요약",
+        "thumbnail": thumbnail_url,
+        "filename": os.path.basename(html_filename)
+    }
+    
+    import json
+    json_filename = html_filename.replace(".html", ".json")
+    with open(json_filename, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, ensure_ascii=False, indent=4)
+    print(f"[MAIN] Metadata saved to {json_filename}")
     
     # 8. 이메일 전송 (NEW)
     print("[EMAIL] Sending Newsletter...")
