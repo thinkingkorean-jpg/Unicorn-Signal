@@ -71,6 +71,12 @@ st.markdown("""
             padding: 15px;
         }
     }
+    
+    /* [Fix] 이미지 테두리/그림자 제거 및 중앙 정렬 보정 */
+    img {
+        border: none !important;
+        box-shadow: none !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -195,9 +201,19 @@ sub_df = load_subscribers()
 
 if st.session_state.get('is_admin', False):
     # ==========================
+    # ==========================
     # ADMIN DASHBOARD
     # ==========================
-    st.title("📊 Admin Dashboard (Secret)")
+    st.title("📊 Admin Dashboard")
+    
+    st.subheader("👥 구독자 현황")
+    if not sub_df.empty:
+        st.dataframe(sub_df, use_container_width=True)
+        st.write(f"총 구독자: {len(sub_df)}명")
+    else:
+        st.info("아직 구독자가 없습니다.")
+        
+    st.divider()
     if st.button("⬅️ Logout / 메인으로"):
         st.session_state['is_admin'] = False
         st.rerun()
@@ -302,12 +318,11 @@ else:
                 
                 if body_content:
                     # newsletter-paper 클래스를 적용하여 스타일 통일
-                    final_html = f"""
-                    <style>{style_content}</style>
-                    <div class="newsletter-paper">
-                        {body_content.decode_contents()}
-                    </div>
-                    """
+                    # [Fix] f-string 들여쓰기 제거 (Markdown Code Block 인식 방지)
+                    final_html = f"""<style>{style_content}</style>
+<div class="newsletter-paper">
+{body_content.decode_contents()}
+</div>"""
                     st.markdown(final_html, unsafe_allow_html=True)
                 else:
                     st.error("뉴스레터 형식이 올바르지 않습니다.")
@@ -337,12 +352,11 @@ else:
             if not body_content: body_content = soup.body
             
             if body_content:
-                final_html = f"""
-                <style>{style_content}</style>
-                <div class="newsletter-paper">
-                    {body_content.decode_contents()}
-                </div>
-                """
+                # [Fix] f-string 들여쓰기 제거
+                final_html = f"""<style>{style_content}</style>
+<div class="newsletter-paper">
+{body_content.decode_contents()}
+</div>"""
                 st.markdown(final_html, unsafe_allow_html=True)
 
             st.divider()
