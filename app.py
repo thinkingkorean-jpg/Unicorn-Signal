@@ -443,20 +443,38 @@ else:
                         title = title.strip()
                         if title.startswith(":"): title = title[1:].strip()
                         
-                        # [Fix] 썸네일 처리 (HTML <img> 태그 사용 - onerror 핸들링)
+                        # [Fix] 썸네일 처리 (CSS 백그라운드 폴백 기법)
                         thumb = meta.get('thumbnail')
                         if not thumb or not thumb.startswith("http"):
-                           thumb = "https://placehold.co/600x400/5b21b6/ffffff?text=Unicorn+Signal"
+                           thumb = "https://placehold.co/600x400/5b21b6/ffffff?text=Unicorn+Signal" # 기본 이미지값
                         
+                        # [Fix] 요약문 정제 (과거 데이터 불렛포인트화)
+                        summary = meta.get('summary', '')
+                        # 기존의 불필요한 서두 제거
+                        summary = summary.replace("🚀 3줄 요약: 왜 이걸 봐야 할까요?", "").replace("3줄 요약:", "").replace("왜 이걸 봐야 할까요?", "").strip()
+                        
+                        # 만약 불렛포인트가 없다면 온점/물음표 기준으로 나눔 (간이 포맷팅)
+                        if "- " not in summary:
+                            sentences = summary.replace("?", "?|").replace(".", ".|").split("|")
+                            clean_sentences = [s.strip() for s in sentences if len(s.strip()) > 10]
+                            # 최대 3개까지만
+                            summary = "<br>".join([f"• {s}" for s in clean_sentences[:3]])
+                        else:
+                            # 이미 불렛이면 줄바꿈만 br로
+                            summary = summary.replace("\n", "<br>")
+
                         cols[i].markdown(f"""
                         <div class="archive-card-container">
-                            <div>
+                            <div class="archive-thumb-wrapper" style="background-image: url('https://placehold.co/600x400/5b21b6/ffffff?text=Unicorn+Signal'); background-size: cover; border-radius: 8px;">
                                 <img src="{thumb}" class="archive-thumb" 
-                                     onerror="this.onerror=null; this.src='https://placehold.co/600x400/5b21b6/ffffff?text=Unicorn+Signal';">
+                                     style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;"
+                                     onerror="this.style.display='none';">
+                            </div>
+                            <div style="margin-top: 10px;">
                                 <div class="archive-title">{title}</div>
-                                <div style="color: #666; font-size: 0.85rem; margin-bottom: 10px;">{meta.get('date', '')}</div>
-                                <div style="font-size: 0.9rem; color: #444; margin-bottom: 15px;">
-                                    {meta.get('summary', '')[:50]}...
+                                <div style="color: #666; font-size: 0.85rem; margin-bottom: 8px;">{meta.get('date', '')}</div>
+                                <div style="font-size: 0.85rem; color: #444; margin-bottom: 15px; line-height: 1.5;">
+                                    {summary}
                                 </div>
                             </div>
                         </div>
