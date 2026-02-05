@@ -45,8 +45,12 @@ ANALYTICS_FILE = 'analytics.json'
 def load_analytics():
     if not os.path.exists(ANALYTICS_FILE):
         return {"visits": 0, "likes": {}}
-    with open(ANALYTICS_FILE, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    try:
+        with open(ANALYTICS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (json.JSONDecodeError, ValueError):
+        # 파일이 깨졌거나 비어있으면 초기화
+        return {"visits": 0, "likes": {}}
 
 def save_analytics(data):
     with open(ANALYTICS_FILE, 'w', encoding='utf-8') as f:
