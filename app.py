@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 import glob
+import json
 from datetime import datetime
 
 # 페이지 설정
@@ -258,7 +259,7 @@ if st.session_state.get('is_admin'):
     st.caption("※ 이 화면은 관리자(본인)에게만 보입니다.")
     st.bar_chart({"Day 1": 10, "Day 2": 15, "Day 3": sub_count}) # 성장이력 그래프 예시
 
-import json
+
 
 # ... (Previous code)
 
