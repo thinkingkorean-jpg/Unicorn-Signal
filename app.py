@@ -116,17 +116,59 @@ with tab1:
     else:
         st.warning("아직 발행된 뉴스레터가 없습니다. 스케줄러를 실행하거나 main.py를 실행해보세요!")
 
+import json
+
+# ... (Previous code)
+
 with tab2:
-    if len(html_files) > 0:
-        st.markdown("### 지난 뉴스레터 다시보기")
-        selected_file = st.selectbox("보고 싶은 날짜를 선택하세요", html_files, format_func=lambda x: os.path.basename(x).replace('.html', ''))
-        
-        if selected_file:
-            with open(selected_file, 'r', encoding='utf-8') as f:
-                archive_content = f.read()
-            st.components.v1.html(archive_content, height=800, scrolling=True)
+    st.markdown("### 📚 지난 뉴스레터 아카이브")
+    
+    # JSON 메타데이터 파일 찾기
+    json_files = glob.glob('archives/*.json')
+    json_files.sort(key=os.path.getmtime, reverse=True)
+    
+    if not json_files:
+        st.info("아직 저장된 뉴스레터가 없습니다.")
     else:
-        st.info("아카이브가 비어있습니다.")
+        # 그리드 레이아웃 (3열)
+        cols = st.columns(3)
+        
+        for idx, json_file in enumerate(json_files):
+            with open(json_file, 'r', encoding='utf-8') as f:
+                try:
+                    meta = json.load(f)
+                    
+                    # 카드 UI 렌더링
+                    with cols[idx % 3]:
+                        with st.container(border=True):
+                            # 썸네일 표시 (에러 시 기본 이미지)
+                            try:
+                                st.image(meta.get('thumbnail', 'https://placehold.co/600x400?text=No+Image'), use_container_width=True)
+                            except:
+                                st.image("https://placehold.co/600x400?text=Error", use_container_width=True)
+                                
+                            st.subheader(meta.get('title', 'Untitled'))
+                            st.caption(f"🗓️ {meta.get('date', '')} | 🏷️ {meta.get('keyword', '')}")
+                            st.write(meta.get('summary', ''))
+                            
+                            # '보기' 버튼 (Unique Key 필수)
+                            html_file_path = os.path.join("archives", meta.get('filename', ''))
+                            if st.button("뉴스레터 보기 ➡️", key=f"btn_{idx}"):
+                                if os.path.exists(html_file_path):
+                                    with open(html_file_path, 'r', encoding='utf-8') as hf:
+                                        content = hf.read()
+                                    # 세션 스테이트에 저장해서 탭 이동 효과
+                                    st.session_state['selected_html'] = content
+                                    st.rerun()
+
+# 탭 밖에서 선택된 뉴스레터 보여주기 (Overlay 형태)
+if 'selected_html' in st.session_state:
+    st.divider()
+    st.markdown("## 📖 선택한 뉴스레터 읽기")
+    if st.button("❌ 닫기 (목록으로 돌아가기)"):
+        del st.session_state['selected_html']
+        st.rerun()
+    st.components.v1.html(st.session_state['selected_html'], height=900, scrolling=True)
 
 # Footer
 st.markdown("---")

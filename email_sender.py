@@ -13,6 +13,7 @@ SENDER_PASSWORD = os.getenv("SMTP_PASSWORD")
 SENDER_NAME = os.getenv("SENDER_NAME", "Unicorn Signal")
 
 def send_email(subject, html_content, to_email=None):
+    """
     HTML 뉴스레터를 이메일로 발송합니다.
     """
     if to_email is None:
