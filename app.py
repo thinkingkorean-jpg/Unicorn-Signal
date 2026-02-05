@@ -403,36 +403,42 @@ else:
                             except:
                                 continue
                         
-                        # [Fix] 제목 정제 (유니콘 시그널 접두사 강제 제거)
-                        title = meta.get('title', '제목 없음').replace("유니콘 시그널:", "").replace("🦄", "").strip()
+                        # [Fix] 제목 정제 (특수문자 및 브랜드명 확실하게 제거)
+                        title = meta.get('title', '제목 없음')
+                        for remove_str in ["유니콘 시그널:", "유니콘 시그널", "Unicorn Signal:", "Unicorn Signal", "🦄"]:
+                            title = title.replace(remove_str, "")
+                        title = title.strip()
                         if title.startswith(":"): title = title[1:].strip()
+                        
                         
                         with cols[i]:
                             with st.container(border=True):
-                                # 썸네일 (에러 방지 및 기본 이미지)
+                                # 썸네일 (에러 방지: URL이 없거나 유효하지 않으면 기본 이미지)
                                 thumb = meta.get('thumbnail')
-                                if not thumb or "http" not in thumb:
-                                    # 유니콘 시그널 기본 썸네일
-                                    thumb = "https://placehold.co/600x400/1e293b/FFF?text=Unicorn+Signal"
+                                if not thumb or not isinstance(thumb, str) or not thumb.startswith("http"):
+                                    thumb = "https://placehold.co/600x400/7c3aed/ffffff?text=Unicorn+Signal"
                                 
                                 try:
                                     st.image(thumb, use_container_width=True)
                                 except:
-                                    st.image("https://placehold.co/600x400/ef4444/FFF?text=Error", use_container_width=True)
+                                    # 로딩 실패 시 표시할 이미지
+                                    st.image("https://placehold.co/600x400/9ca3af/ffffff?text=No+Image", use_container_width=True)
                                 
                                 st.markdown(f"**{title}**")
                                 st.caption(meta.get('date', ''))
                                 
-                                # 요약문 표시
+                                # 요약문 길이 제한 (높이 통일용)
                                 summary = meta.get('summary', '')
-                                if summary:
-                                    st.write(summary[:60] + "...")
-
-                            if st.button("읽기 ➡️", key=f"read_{i}"):
-                                target_html = jpath.replace('.json', '.html')
-                                if os.path.exists(target_html):
-                                    with open(target_html, 'r', encoding='utf-8') as hf:
-                                        content = hf.read()
-                                    st.session_state['selected_html'] = content
-                                    st.session_state['selected_file_name'] = os.path.basename(target_html)
-                                    st.rerun()
+                                if len(summary) > 40: summary = summary[:40] + "..."
+                                st.write(summary)
+                                
+                                # [Fix] Key값 중복 방지 (파일명을 Key로 사용)
+                                unique_key = f"read_{os.path.basename(jpath)}"
+                                if st.button("읽기 ➡️", key=unique_key):
+                                    target_html = jpath.replace('.json', '.html')
+                                    if os.path.exists(target_html):
+                                        with open(target_html, 'r', encoding='utf-8') as hf:
+                                            content = hf.read()
+                                        st.session_state['selected_html'] = content
+                                        st.session_state['selected_file_name'] = os.path.basename(target_html)
+                                        st.rerun()
