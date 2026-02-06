@@ -209,6 +209,17 @@ if st.session_state.get('is_admin', False):
     st.subheader("👥 구독자 현황")
     if not sub_df.empty:
         st.dataframe(sub_df, use_container_width=True)
+        
+        # [NEW] 구독자 리스트 다운로드 버튼 (로컬 이동용)
+        csv = sub_df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 구독자 목록 다운로드 (CSV)",
+            data=csv,
+            file_name="subscribers.csv",
+            mime="text/csv",
+            key='download-csv'
+        )
+        
         st.write(f"총 구독자: {len(sub_df)}명")
     else:
         st.info("아직 구독자가 없습니다.")
