@@ -123,26 +123,66 @@ def toggle_like(filename):
     st.session_state[liked_key] = True
     return True, "소중한 피드백 감사합니다! ❤️"
 
+# [New] 구글 시트 연동 모듈
+import google_sheet
+
 def load_subscribers():
+    # 1. Google Sheet 시도
+    # (주의: 인증 파일이 없으면 빈 DataFrame을 반환함)
+    df_cloud = google_sheet.load_subscribers_gsheet()
+    
+    # 2. Local CSV 로드
     if not os.path.exists(SUBSCRIBERS_FILE):
-        df = pd.DataFrame(columns=['email', 'nickname', 'date'])
-        df.to_csv(SUBSCRIBERS_FILE, index=False)
-        return df
-    return pd.read_csv(SUBSCRIBERS_FILE)
+        df_local = pd.DataFrame(columns=['email', 'nickname', 'date'])
+        df_local.to_csv(SUBSCRIBERS_FILE, index=False)
+    else:
+        df_local = pd.read_csv(SUBSCRIBERS_FILE)
+    
+    # 두 데이터를 합쳐서 보여줄지, 하나만 보여줄지 결정
+    # 인증이 되어 있다면 Cloud 데이터가 '진본'임.
+    # 하지만 로컬 테스트 중일 수 있으므로, 만약 Cloud가 비어있고 Local이 있으면 Local 반환?
+    # 간단하게: Cloud에서 데이터를 가져왔으면(헤더가 있으면) Cloud 우선.
+    if not df_cloud.empty:
+        return df_cloud
+        
+    return df_local
 
 def save_subscriber(email, nickname):
-    df = load_subscribers()
-    if email in df['email'].values:
-        return False, "이미 구독 중인 이메일입니다! 🦄"
+    # 1. 구글 시트 저장 시도 (우선순위)
+    gs_success, gs_msg = google_sheet.save_subscriber_gsheet(email, nickname)
+    
+    # 구글 시트 저장이 성공했거나, '이미 구독 중' 같은 논리적 결과라면 바로 반환
+    if gs_success or "이미" in gs_msg:
+        return gs_success, gs_msg
+
+    # 2. 구글 시트 실패(인증 없음 등) 시 -> 로컬 CSV 저장 (Fallback)
+    df = load_subscribers() # 로컬 로드 (위 함수 로직에 따라 Cloud일수도 있으나, 여기서 다시 로컬 처리)
+    
+    # 로컬 파일 직접 핸들링
+    if os.path.exists(SUBSCRIBERS_FILE):
+        df_local = pd.read_csv(SUBSCRIBERS_FILE)
+    else:
+        df_local = pd.DataFrame(columns=['email', 'nickname', 'date'])
+        
+    if email in df_local['email'].values:
+        # 구글 시트 실패하고 로컬에는 이미 있는 경우
+        if "인증 키" in gs_msg:
+             return False, f"구글 시트 연동 필요 ({gs_msg}). 로컬엔 이미 있습니다."
+        return False, "이미 구독 중인 이메일입니다! (Local)"
     
     new_entry = pd.DataFrame([{
         'email': email, 
         'nickname': nickname, 
         'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }])
-    df = pd.concat([df, new_entry], ignore_index=True)
-    df.to_csv(SUBSCRIBERS_FILE, index=False)
-    return True, "구독 신청이 완료되었습니다! 매일 아침 만나요 👋"
+    df_local = pd.concat([df_local, new_entry], ignore_index=True)
+    df_local.to_csv(SUBSCRIBERS_FILE, index=False)
+    
+    # 메시지 분기
+    if "인증 키" in gs_msg:
+        return True, "구독 완료! (로컬 저장됨 - 구글 시트 연동을 설정해주세요)"
+        
+    return True, "구독 신청이 완료되었습니다! (Local Saved)"
 
 # 앱 실행 시 방문자 카운트
 increment_visit()
