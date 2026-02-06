@@ -39,9 +39,18 @@ def send_email(subject, html_content, to_email=None):
         msg.attach(MIMEText(html_content, 'html'))
 
         # SMTP 연결 및 전송
-        print(f"[EMAIL] Connecting to {SMTP_SERVER}...")
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()
+        print(f"[EMAIL] Connecting to {SMTP_SERVER} on port {SMTP_PORT}...")
+        
+        # [Fix] Port 465(SSL)와 587(TLS) 분기 처리
+        if SMTP_PORT == 465:
+            # SSL 연결 (포트 465)
+            server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
+            server.ehlo()
+        else:
+            # TLS 연결 (포트 587)
+            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+            server.starttls()
+
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
         text = msg.as_string()
         server.sendmail(SENDER_EMAIL, to_email, text)

@@ -55,45 +55,40 @@ def summarize_content(content_list):
         combined_text += f"\nTitle: {item['title']}\nLink: {item['link']}\n{img_info}\nSummary: {item['summary']}\n---"
     
     prompt = f"""
-    당신은 1인 유니콘 기업가를 위한 **최고의 비즈니스 인텔리전스 분석가**입니다.
-    아래 수집된 뉴스/영상 데이터를 바탕으로 **'유니콘 시그널(Unicorn Signal)' 뉴스레터**를 작성해주세요.
+    당신은 실리콘밸리에서 가장 날카로운 통찰력을 가진 **테크 전문 에디터**입니다.
+    딱딱한 AI 말투(예: "결론적으로", "살펴보겠습니다", "주목해야 합니다")를 **절대 사용하지 마세요.**
     
-    독자는 새로운 사업 기회를 찾는 예비 창업가, 개발자, 투자자입니다. 
-    단순한 정보 전달을 넘어, **"그래서 이걸로 어떻게 돈을 벌 수 있는데?"**에 대한 답을 주어야 합니다.
+    대신, **스마트하고 위트 있는 동료가 커피를 마시며 핵심만 찔러주는 듯한 말투**를 사용하세요.
+    - 문장은 짧고 간결하게 끊으세요.
+    - 독자(창업가, 개발자)의 시간을 아껴주세요.
+    - "왜냐하면", "또한", "따라서" 같은 접속사를 남발하지 마세요.
 
-    **Content Requirements (Must follow this order):**
-    
-    **[Part 0: The 3-Line "Dip" (Executive Summary)]**
-    - Wrap this section in a specific div: <div class="summary-box">
-    - Title: "<h3>🚀 3줄 요약: 왜 이걸 봐야 할까요?</h3>"
-    - Content: Summarize the most critical insight in exactly 3 bullet points.
-    - Close the div: </div>
-    
-    **[Part 1: Market Signal]**
-    - Synthesize the news into a cohesive narrative (don't just list articles).
-    - Headline: Start with a catchy title in <h1>.
-    - Explain 'Why this matters' for a business owner.
-    
-    **[Part 2: Key Updates]**
-    - Highlight specific news items or videos.
-    
-    **[Part 3: One Business Idea]**
-    - Suggest a potential business idea or SaaS opportunity based on this trend.
-    
-    **[Part 4: Image Placement]**
-    - Use Image URLs naturally.
-    
-    4. **이미지 배치 (Required)**:
-        - 각 뉴스 항목에 해당하는 **Image URL**이 제공되었습니다.
-        - 뉴스레터 내 적절한 위치에 `<img src="Image URL" alt="news image">` 태그를 사용하여 이미지를 반드시 삽입하세요.
-        - 이미지가 없으면 사용하지 않아도 됩니다.
+    **작성 목표:**
+    아래 수집된 데이터를 바탕으로 독자가 **"돈이 되는 기회"**를 발견할 수 있는 뉴스레터를 구성하세요.
 
-    5. **출력 형식**:
-        - `<h1>...</h1>`로 시작해야 합니다.
-        - 반드시 HTML 태그를 포함하여 출력하세요. (`<div>`, `<h2>`, `<ul>`, `<li>`, `<a>`, `<img>` 등)
-        - CSS 클래스는 제외하고 시멘틱 태그 위주로 작성하세요.
-
-    수집된 데이터 (상위 5개):
+    **[필수 구성 요소 및 순서]**
+    
+    **1. [Part 0: The 3-Line "Dip" (핵심 요약)]**
+    - 반드시 `<div class="summary-box">` 태그로 감싸세요.
+    - 제목은 쓰지 마세요 (CSS로 처리됨).
+    - **가장 중요한 3가지 핵심 인사이트**를 불렛포인트(`- `)로 작성하세요.
+    - 설명조가 아닌, 핵심만 짚으세요.
+    
+    **2. [Part 1: Market Signal (메인 스토리)]**
+    - **`<h1>` 태그로 섹시하고 자극적인 제목을 다세요.** (주의: "유니콘 시그널"이라는 단어는 제목에 절대 넣지 마세요.)
+    - 여러 뉴스를 엮어서 하나의 흐름(Narrative)으로 설명하세요.
+    - "이게 왜 중요하냐면..." 식의 화법을 구사하세요.
+    
+    **3. [Part 2: Key Updates (주요 뉴스)]**
+    - 중요한 개별 뉴스들을 소개하세요.
+    
+    **4. [Part 3: One Business Idea (사업 아이디어)]**
+    - 이 트렌드를 활용해 당장 시도해볼 만한 **SaaS 아이디어**나 **비즈니스 모델**을 제안하세요.
+    
+    **5. [이미지 배치]**
+    - 제공된 Image URL을 적절한 곳에 `<img src="URL" alt="...">` 로 넣으세요.
+    
+    **수집된 데이터:**
     {combined_text[:15000]}
     """
     
@@ -105,14 +100,17 @@ def summarize_content(content_list):
         if "```" in newsletter_body:
             newsletter_body = newsletter_body.replace("```html", "").replace("```", "").strip()
             
-        # 제목 추출 (H1)
+        # 제목 추출 (H1) 및 강력 정제
         import re
         title_match = re.search(r'<h1>(.*?)</h1>', newsletter_body, re.IGNORECASE)
         title = "Unicorn Signal Insight" # Default
         
         if title_match:
-            title = title_match.group(1)
-            # 본문에서는 제거 (또는 유지? 템플릿 헤더에 넣을 것이므로 제거가 깔끔)
+            raw_title = title_match.group(1)
+            # [Fix] 제목에서 불필요한 prefix 제거 (AI가 지시를 어길 경우 대비)
+            title = raw_title.replace("Unicorn Signal", "").replace("유니콘 시그널", "").replace("🦄", "").replace(":", "").strip()
+            
+            # 본문에서는 제목(H1) 제거 (템플릿 상단에 따로 표시되므로 중복 방지)
             newsletter_body = newsletter_body.replace(title_match.group(0), "")
             
         return title, newsletter_body

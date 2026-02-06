@@ -68,11 +68,14 @@ async def main(keyword=None):
     except:
         safe_title = ai_title
     
-    # [UI Fix] 제목에서 '유니콘 시그널:' 브랜드명 중복 제거
-    replacements = ["유니콘 시그널:", "유니콘 시그널 :", "Unicorn Signal:", "Unicorn Signal :"]
+    # [UI Fix] 제목에서 '유니콘 시그널:' 브랜드명 중복 제거 (강력 모드)
+    # ai_agent.py에서 1차로 제거하지만, 혹시 몰라 2차 필터링
+    replacements = ["유니콘 시그널:", "유니콘 시그널", "Unicorn Signal:", "Unicorn Signal", "🦄"]
     for r in replacements:
         safe_title = safe_title.replace(r, "")
     safe_title = safe_title.strip()
+    if safe_title.startswith("-") or safe_title.startswith(":"):
+        safe_title = safe_title[1:].strip()
     
     print(f"[AI] Generated Title: {safe_title}")
     
@@ -167,9 +170,37 @@ async def main(keyword=None):
     # 8. 이메일 전송 (NEW)
     print("[EMAIL] Sending Newsletter...")
     email_subject = f"🦄 {ai_title} ({today_str})"
-    # 이메일 수신자 설정 (환경 변수 또는 기본값)
-    to_email = os.getenv("TO_EMAIL", "recipient@example.com")
-    send_email(email_subject, output_html, to_email=to_email)
+    # 8. 이메일 전송 (NEW)
+    print("[EMAIL] Sending Newsletter...")
+    email_subject = f"🦄 {ai_title} ({today_str})"
+    
+    # [Update] 구독자 리스트 확인 및 전송
+    recipients = []
+    try:
+        if os.path.exists("subscribers.csv"):
+            import csv
+            with open("subscribers.csv", "r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    if row.get("email") and "@" in row['email']:
+                        recipients.append(row["email"].strip())
+    except Exception as e:
+        print(f"[EMAIL] Error reading subscribers: {e}")
+
+    # 구독자가 없으면 테스트 이메일(Admin) 사용
+    if not recipients:
+        print("[EMAIL] No subscribers found in CSV. Sending to Admin only.")
+        default_email = os.getenv("TO_EMAIL")
+        if default_email:
+            recipients.append(default_email)
+    
+    # 전송 루프
+    if recipients:
+        print(f"[EMAIL] Sending to {len(recipients)} recipients...")
+        for recipient in recipients:
+             send_email(email_subject, output_html, to_email=recipient)
+    else:
+        print("[EMAIL] No recipients defined. Check subscribers.csv or TO_EMAIL.")
 
 if __name__ == "__main__":
     asyncio.run(main())
