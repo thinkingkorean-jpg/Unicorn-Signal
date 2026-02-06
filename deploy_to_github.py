@@ -4,6 +4,11 @@ import sys
 
 def run_command(command, ignore_errors=False):
     """Run a shell command and print output."""
+    # [Fix] Git 절대 경로 사용 (환경 변수 문제 해결)
+    if command.strip().startswith("git"):
+        git_path = r'"C:\Program Files\Git\cmd\git.exe"'
+        command = command.replace("git", git_path, 1)
+
     try:
         result = subprocess.run(command, shell=True, check=True, text=True, capture_output=True)
         return result.stdout.strip()
